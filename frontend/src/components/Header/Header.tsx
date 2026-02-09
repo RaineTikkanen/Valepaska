@@ -4,7 +4,7 @@ function Header() {
   return (
     <header className="flex flex-row items-center justify-between py-6">
       <Link to="/" 
-        className="animate-colors duration-300 font-mono text-4xl text-shadow-md hover:text-green-600"
+        className="font-mono text-4xl duration-300 text-shadow-md hover:text-green-600"
       >
         Valepaska
       </Link>

@@ -3,7 +3,7 @@ import type { Card } from '../../types/Card';
 import deck from '../../assets/deck';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { useEffect, useState } from 'react';
-import Button from '../../components/Button'
+import Button from '../../components/Button';
 
 function Game() {
   
@@ -30,7 +30,7 @@ function Game() {
   function playCards(){
     dispatch({ type: 'hand/removeCards', payload: hand.selectedCards });
     dispatch({ type: 'hand/clearSelectedCards' });
-    console.log("Selected: ", hand.selectedCards)
+    console.log('Selected: ', hand.selectedCards);
   }
 
   useEffect(() => {
@@ -45,8 +45,8 @@ function Game() {
   return (
     <div className="">
       <div className="flex flex-grow  justify-center ">
-        <Button text="Jaa 5" onClick={()=>dealCards(5)}/ >
-        <Button text="Pelaa kortit" onClick={playCards}/ >
+        <Button text="Jaa 5" onClick={()=>dealCards(5)} />
+        <Button text="Pelaa kortit" onClick={playCards} />
       </div>
       <div className="absolute inset-x-0 bottom-0 flex justify-center">
         <Hand />

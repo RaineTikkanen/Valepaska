@@ -1,7 +1,7 @@
 
-function Button({text, onClick}:{text:String, onClick:Function}) {
+function Button({text, onClick}:{text:string, onClick:()=>void}) {
   return (
-    <button className="transition-all duration-300 m-3 rounded-xl bg-emerald-400 p-3 hover:bg-green-400 hover:cursor-pointer flex-1 " onClick={()=>onClick()}>
+    <button className="m-3 flex-1 rounded-xl bg-emerald-400 p-3 duration-300 hover:cursor-pointer hover:bg-green-400 " onClick={()=>onClick()}>
       {text}
     </button>
   );
