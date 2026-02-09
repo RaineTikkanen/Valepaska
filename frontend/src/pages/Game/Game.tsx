@@ -3,6 +3,7 @@ import type { Card } from '../../types/Card';
 import deck from '../../assets/deck';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { useEffect, useState } from 'react';
+import Button from '../../components/Button'
 
 function Game() {
   
@@ -28,7 +29,8 @@ function Game() {
 
   function playCards(){
     dispatch({ type: 'hand/removeCards', payload: hand.selectedCards });
-    dispatch({ type: 'hand/clearChosenCards' });
+    dispatch({ type: 'hand/clearSelectedCards' });
+    console.log("Selected: ", hand.selectedCards)
   }
 
   useEffect(() => {
@@ -42,19 +44,11 @@ function Game() {
 
   return (
     <div className="">
-      <div className="flex justify-center flex-grow ">
-        <button 
-          className="transition-all m-3 w-sm md:w-xl sm:md rounded-xl bg-emerald-400 p-3 hover:bg-emerald-500 hover:cursor-pointer"
-          onClick={()=>dealCards(5)}>
-          Deal 5
-        </button>
-        <button 
-        className="m-3 w-sm md:w-xl sm:md rounded-xl bg-emerald-400 p-3 hover:bg-emerald-500"
-        onClick={playCards}>
-          Play
-        </button>
+      <div className="flex flex-grow  justify-center ">
+        <Button text="Jaa 5" onClick={()=>dealCards(5)}/ >
+        <Button text="Pelaa kortit" onClick={playCards}/ >
       </div>
-      <div className="flex justify-center inset-x-0 bottom-0 absolute">
+      <div className="absolute inset-x-0 bottom-0 flex justify-center">
         <Hand />
       </div>
     </div>

@@ -29,7 +29,7 @@ function CardComponent({ card }: { card: Card }) {
   return (
     <div
       key={card.name} 
-      className={` transition-all min-w-35 max-w-35 ${isSelected ? '-mt-6' : ''}`}
+      className={` max-w-35 min-w-35 transition-all ${isSelected ? '-mt-6' : ''}`}
       onClick={() => toggleCardSelection(card)}
     >
       <img

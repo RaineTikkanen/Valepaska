@@ -7,7 +7,7 @@ import Rules from '../pages/Rules';
 
 function App() {
   return (
-    <div className='h-screen p-5'>
+    <div className="h-screen p-5">
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />
