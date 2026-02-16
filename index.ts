@@ -48,8 +48,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('play', (cards, statement)=>{
-    console.log("message sent by", socket.id,':');
-    console.log("Played cards: ",cards, ", statement: ", statement);
+    console.log('message sent by', socket.id,':');
+    console.log('Played cards: ',cards, ', statement: ', statement);
 
     socket.broadcast.emit('gameState', statement )
   })

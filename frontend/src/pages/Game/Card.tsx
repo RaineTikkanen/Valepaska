@@ -6,23 +6,23 @@ import { useState, useEffect } from 'react';
 
 function CardComponent({ card }: { card: Card }) {
   const [isSelected, setIsSelected] = useState(false);
-  const selectedCards = useAppSelector(selectSelectedCards)
+  const selectedCards = useAppSelector(selectSelectedCards);
 
 
   useEffect(()=>{
     if (selectedCards.includes(card)){
-      setIsSelected(true)
+      setIsSelected(true);
     }
   },[]);
 
-  const dispatch=useAppDispatch()
+  const dispatch=useAppDispatch();
 
   
 
   const onClick = (card: Card) => {
-    dispatch(toggleCardSelectState(card))
-    setIsSelected(!isSelected)
-  }
+    dispatch(toggleCardSelectState(card));
+    setIsSelected(!isSelected);
+  };
 
 
   return (
