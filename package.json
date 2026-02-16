@@ -6,7 +6,7 @@
   "scripts": {
     "test": "npm test",
     "dev": "ts-node-dev index.ts",
-    "lint": "eslint . --fix",
+    "lint": "eslint",
     "start": "node build/index.js",
     "tsc": "tsc"
   },
@@ -18,6 +18,8 @@
     "@types/eslint__js": "^8.42.3",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.8",
+    "@types/socket.io": "^3.0.1",
+    "@types/ws": "^8.18.1",
     "eslint": "^9.39.2",
     "globals": "^17.0.0",
     "jiti": "^2.6.1",
@@ -27,6 +29,7 @@
     "typescript-eslint": "^8.53.0"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
   }
 }

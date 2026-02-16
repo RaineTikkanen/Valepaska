@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import handReducer from '../pages/Game/handSlice';
+import handReducer from './pages/Game/handSlice';
 
 export const store = configureStore({
   reducer: {

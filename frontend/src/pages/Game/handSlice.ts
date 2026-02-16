@@ -1,7 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { RootState } from '../../app/store';
+import type { RootState } from '../../store';
 import type { Card } from '../../types/Card';
+import { current } from '@reduxjs/toolkit'
 
 export interface HandState {
   cards: Array<Card>;
@@ -29,13 +30,17 @@ export const handSlice = createSlice({
     clearCards: (state) => {
       state.cards = [];
     },
-    selectCard: (state, action: PayloadAction<Card>) => {
-      state.selectedCards.push(action.payload);
-    },
-    deselectCard: (state, action: PayloadAction<Card>) => {
-      state.selectedCards = state.selectedCards.filter(
-        (card) => card.name !== action.payload.name,
-      );
+    toggleCardSelectState: (state, action: PayloadAction<Card>) => {
+      console.log(current(state.selectedCards))
+      const selected = state.selectedCards.some(
+        card => card.name === action.payload.name
+      )
+      if (selected){
+        state.selectedCards = state.selectedCards.filter(
+        (card) => card.name !== action.payload.name)
+      } else {
+        state.selectedCards.push(action.payload);
+      }
     },
     clearSelectedCards: (state) => {
       state.selectedCards = [];
@@ -46,9 +51,8 @@ export const handSlice = createSlice({
 export const {
   addCards,
   removeCards,
-  selectCard: addChosenCard,
-  deselectCard: removeChosenCard,
-  clearSelectedCards: clearChosenCards,
+  toggleCardSelectState,
+  clearSelectedCards
 } = handSlice.actions;
 
 export const selectHandCards = (state: RootState) => state.hand.cards;

@@ -1,36 +1,35 @@
 import cardImages from '../../assets/cardImages';
 import type { Card } from '../../types/Card';
-import { useAppSelector, useAppDispatch } from '../../hooks/redux';
+import {useAppSelector, useAppDispatch} from '../../hooks/redux';
+import { toggleCardSelectState, selectSelectedCards } from './handSlice';
 import { useState, useEffect } from 'react';
 
 function CardComponent({ card }: { card: Card }) {
   const [isSelected, setIsSelected] = useState(false);
+  const selectedCards = useAppSelector(selectSelectedCards)
 
-  const hand = useAppSelector((state) => state.hand);
 
-  const dispatch = useAppDispatch();
-
-  const toggleCardSelection = (card: Card) => {
-    const isChosen = hand.selectedCards.some((c) => c.name === card.name);
-    if (isChosen) {
-      dispatch({ type: 'hand/deselectCard', payload: card });
-      setIsSelected(false);
-    } else {
-      dispatch({ type: 'hand/selectCard', payload: card });
-      setIsSelected(true);
+  useEffect(()=>{
+    if (selectedCards.includes(card)){
+      setIsSelected(true)
     }
-  };
+  },[]);
 
-  useEffect(() => {
-    const isChosen = hand.selectedCards.some((c) => c.name === card.name);
-    setIsSelected(isChosen);
-  }, [hand.selectedCards, card]);
+  const dispatch=useAppDispatch()
+
+  
+
+  const onClick = (card: Card) => {
+    dispatch(toggleCardSelectState(card))
+    setIsSelected(!isSelected)
+  }
+
 
   return (
     <div
       key={card.name} 
       className={` max-w-35 min-w-35 transition-all ${isSelected ? '-mt-6' : ''}`}
-      onClick={() => toggleCardSelection(card)}
+      onClick={() => onClick(card)}
     >
       <img
         src={cardImages[card.name]}

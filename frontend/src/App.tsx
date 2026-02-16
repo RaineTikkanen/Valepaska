@@ -1,9 +1,10 @@
 import { Routes, Route } from 'react-router';
-import Header from '../components/Header';
+import Header from './components/Header';
 
-import Game from '../pages/Game';
-import Home from '../pages/Home';
-import Rules from '../pages/Rules';
+import Game from './pages/Game';
+import Home from './pages/Home';
+import Rules from './pages/Rules';
+import Lobby from './pages/Lobby';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />
         <Route path="/rules" element={<Rules />} />
+        <Route path="/lobby" element={<Lobby />} />
       </Routes>
     </div>
   );
