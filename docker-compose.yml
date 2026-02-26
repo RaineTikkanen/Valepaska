@@ -1,0 +1,6 @@
+services:
+  redis:
+    image: redis:8.0
+    ports:
+      - 6000:6379
+    command: ['redis-server']
