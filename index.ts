@@ -1,16 +1,20 @@
 import express from 'express';
 import { Server } from 'socket.io';
 import { createServer } from 'node:http';
+import { v7 as uuidv7 } from 'uuid';
 
 interface ServerToClientEvents {
   deal: (cards: string) => void;
   doubtResult: (result: boolean) => void;
   gameState: (statement: string) => void;
+  joinedGame: (id: string) => void;
 }
 
 interface ClientToServerEvents {
   play: (cards: string, statement: string) => void;
   doubt: () => void;
+  createGame: () => void;
+  joinGame: (id: string) => void;
 }
 
 interface SocketData {
@@ -48,10 +52,25 @@ io.on('connection', (socket) => {
   });
 
   socket.on('play', (cards, statement)=>{
-    console.log('message sent by', socket.id,':');
     console.log('Played cards: ',cards, ', statement: ', statement);
 
     socket.broadcast.emit('gameState', statement )
+  })
+
+  socket.on('createGame', () => {
+    console.log('creating game')
+    const id = uuidv7()
+    console.log("id= ",id)
+    socket.join(id)
+    console.log(socket.rooms)
+    socket.emit('joinedGame', id)
+  })
+
+  socket.on('joinGame', (id)=>{
+    socket.join(id)
+    console.log("user ", socket.id, " joined room ", id )
+    console.log(socket.rooms)
+    socket.emit('joinedGame', id)
   })
 });
 

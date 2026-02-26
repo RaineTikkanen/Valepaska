@@ -17,7 +17,6 @@ function CardComponent({ card }: { card: Card }) {
 
   const dispatch=useAppDispatch();
 
-  
 
   const onClick = (card: Card) => {
     dispatch(toggleCardSelectState(card));
