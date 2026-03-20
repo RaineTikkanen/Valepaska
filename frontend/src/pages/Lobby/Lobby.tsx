@@ -1,64 +1,67 @@
 import { useState, useEffect } from 'react';
-import { socket } from '../../socket';
+import {socket} from '../../services/webSocketService/socket.js'
 import Button from '../../components/Button';
 import { useNavigate } from 'react-router';
 import useField from '../../hooks/useField';
-import type { Card } from '../../types/Card';
-import { useAppDispatch } from '../../hooks/redux';
-import { addCards } from '../Game/handSlice';
+import { useAppSelector, useAppDispatch } from '../../hooks/redux';
+import { setRoomId, setUsers, clearRoom } from './roomSlice.js';
 
 function Lobby (){
   const [isConnected, setIsConnected]=useState(socket.connected);
   const [userId, setUserId] = useState('');
-  const [gameId, setGameId] = useState('');
   const inputGameId = useField('text', 'Game ID');
-  const [users, setUsers] = useState<string[]>([]);
   const navigate = useNavigate();
+
+  const room = useAppSelector((state) => state.room);
+  const dispatch = useAppDispatch();
   
-  useEffect(()=>{
 
-    const onConnect = () => {
-      setIsConnected(true);
-    };
+  const getGuestUserId = async () => {
+    const response = await fetch('http://localhost:3000/userId');
+    const result = await response.json();
+    setUserId(result.id);
+    localStorage.setItem('userId', result.id);
+  };
 
-    const getGuestUserId = async () => {
-      console.log('getting id');
-      const response = await fetch('http://localhost:3000/userId');
-      const result = await response.json();
-      setUserId(result.id);
-      console.log(result.id);
-      localStorage.setItem('userId', result.id);
-    };
+  const onConnect = () => {
+    setIsConnected(true);
+  };
 
+  const onDisconnect = () => {
+    setIsConnected(false);
+  };  
+
+  const init=async()=>{
     const userIdFromStorage=localStorage.getItem('userId');
-    const gameIdFromStorage=localStorage.getItem('gameId');
-    
-    console.log('gameIdFromStorage: ', gameIdFromStorage);
-    console.log('userIdFromStorage: ', userIdFromStorage);
 
+    if(userIdFromStorage){
+      setUserId(userIdFromStorage);
+    }else{
+      await getGuestUserId();
+    }
+  };
 
-    userIdFromStorage ? setUserId(userIdFromStorage) : getGuestUserId();
-    if(gameIdFromStorage) setGameId(gameIdFromStorage);
+  useEffect(()=>{
+    init().catch((e)=>console.log(e));
 
 
     socket.connect();
     socket.on('connect', onConnect);
-    socket.on('disconnect', ()=>setIsConnected(false));
+    socket.on('disconnect', onDisconnect);
 
     return()=>{
-      socket.off('disconnect', ()=>console.log('disconnected'));
-      socket.off('connect', ()=>console.log('connected'));
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
     };
   },[]);
 
   useEffect(()=>{
     const onGameStart = () =>{
-      console.log('Game Starts');
       navigate('/game');
     };
 
     const onJoinedGame = (users: string[]) => {
-      setUsers(users);
+      dispatch(setUsers(users));
     };
 
     socket.on('gameStarts', onGameStart);
@@ -71,8 +74,7 @@ function Lobby (){
 
   const createGame = () => {
     socket.emit('createGame', userId, (gameId: string) => {
-      setGameId(gameId);
-      localStorage.setItem('gameId', gameId);
+      dispatch(setRoomId(gameId));
     });
     
 
@@ -81,24 +83,26 @@ function Lobby (){
   const joinGame = () => {
     socket.emit('joinGame', inputGameId.value, userId, (result: string) => {
       if (result==='ERR'){
-        console.log('error joining game');
+        window.alert('Error joining game. Please check the Game ID and try again.');
+        return;
       }
-      setGameId(inputGameId.value);
+      dispatch(setRoomId(inputGameId.value));
       localStorage.setItem('gameId', inputGameId.value);
     });
   };
 
   const leaveGame = () => {
-    console.log('leaving game');
     localStorage.clear();
-    setGameId('');
-    setUsers([]);
-    socket.emit('leaveGame', gameId, userId);
+    dispatch(clearRoom());
+    socket.emit('leaveGame', room.roomId, userId);
   };
 
   const startGame = () => {
-    socket.emit('startGame', (result:string)=>{
-      console.log(result);
+    socket.emit('startGame', room.roomId, (result:string)=>{
+      if(result==='ERR'){
+        console.log('error starting game');
+        window.alert('Error starting game. Please try again.');
+      }
     });
   };
 
@@ -108,18 +112,17 @@ function Lobby (){
     );
   }
 
-  console.log('userId: ', userId);
-  console.log('gameId: ', gameId);
-
-  const userList = users.map(user => <p key={user}>{user}</p>);
+  const userList = room.users.map((user, index) => (
+    <p key={index}>{user}</p>
+  ));
 
   return(
     <div className="flex flex-col p-3">
       <h1 className="py-5 text-2xl">Lobby</h1>
       {userId && <h2>Vieras ID: {userId}</h2>}
-      {gameId && <h2>Pelin ID: {gameId}</h2>}
+      {room.roomId && <h2>Pelin ID: {room.roomId}</h2>}
       
-      {users.length !== 0 ?
+      {room.users.length !== 0 ?
         <div className="py-2 transition-all">
           <h2 className="font-bold">Pelaajat:</h2>
           {userList}
@@ -128,7 +131,7 @@ function Lobby (){
         <div />
       }
 
-      <Button text="Luo peli" onClick={createGame} disabled={gameId!==''} />
+      <Button text="Luo peli" onClick={createGame} disabled={room.roomId!==''} />
       <label>
         Give Game ID
       </label>
@@ -140,18 +143,18 @@ function Lobby (){
         <Button 
           text="Poistu pelistä" 
           onClick={()=>leaveGame()} 
-          disabled={gameId===''} 
+          disabled={room.roomId===''} 
         />
         <Button 
           text="Liity peliin" 
           onClick={()=>joinGame()} 
-          disabled={inputGameId.value==='' || gameId!==''} 
+          disabled={inputGameId.value==='' || room.roomId!==''} 
         />
       </div>
       <Button 
         text="Aloita peli" 
         onClick={()=>startGame()} 
-        disabled={gameId==''} 
+        disabled={room.roomId==''} 
       />
     </div>
   );

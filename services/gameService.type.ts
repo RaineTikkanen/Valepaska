@@ -1,5 +1,3 @@
-import { Card } from '../deck/deck.type.js';
-
 export interface Play {
   player: string;
   statement: Statement

@@ -2,8 +2,8 @@ import redis from 'redis'
 import { REDIS_URL } from '../utils/config.js'
 import shuffledDeck from '../deck/deck.js'
 import { Card } from '../deck/deck.type.js';
-import { Play, User, Statement, GameState } from './controller.type.js';
-import { gameStateUpdate } from '../socketHandlers/gameHandlers.type.js';
+import { Play, User, GameState } from './controller.type.js';
+import { gameStateUpdate } from '../services/gameService.type.js';
 
 
 
@@ -130,7 +130,7 @@ const getUserIndexInAGame = async (gameId: string, userId: string): Promise<numb
  * @param cards cards to add to hand
  */
 const appendUserHandByIndex = async (gameId: string, index: number, cards: Card[]) => {
-  client.json.arrAppend(
+  await client.json.arrAppend(
     gameId,
     `$.users[${index}].hand`,
     cards
@@ -161,24 +161,22 @@ const getDeck = async (gameId:string): Promise<Card[]> =>{
 const dealCardsToUserByIndex = async (gameId: string, index: number, amount: number) => {
   let cards: Array<Card>=[];
 
-  const gameDeck = await getDeck(gameId)
 
-  if(gameDeck){
+  for(let i=0; i < amount; i++){
+    const card = await getCardFromDeck(gameId);
 
-    if(gameDeck.length < amount){
-      amount=gameDeck.length
-    }
+    if (card===null) return
 
-    for(let i=0; i < amount; i++){
-      const card = gameDeck.pop()
-      if(card){
-        cards= cards.concat(card)
-      }
-    }
-
-    await appendUserHandByIndex(gameId, index, cards)
-    await setGameDeck(gameId, gameDeck)
+    cards= cards.concat(card)
   }
+  await appendUserHandByIndex(gameId, index, cards)  
+}
+
+const getCardFromDeck = async (gameId: string): Promise<Card | null> => {
+  return await client.json.arrPop(
+    gameId,
+    {path: '.deck'}
+  ) as Card | null
 }
 
 
@@ -245,14 +243,16 @@ const getUserById = async (gameId: string, userId: string): Promise<User | null 
   return null
 }
 
+/*
 const getUserHand = async (gameId: string, userId: string): Promise<Card[] | null> => {
   const users = getUserById(gameId, userId);
   return null
 }
+  */
 
 
 const setGameDeck = async (gameId: string, deck: Card[]) => {
-  client.json.set(
+  await client.json.set(
     gameId,
     '$.deck',
     deck
@@ -270,7 +270,6 @@ export default{
   dealInitialCards,
   dealCardsToUserById,
   getUsersInAGame,
-  getUserHand,
   getGameStateUpdate,
   removeUserFromGame
 }

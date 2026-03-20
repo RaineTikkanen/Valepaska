@@ -7,8 +7,8 @@ function Home() {
   return (
     <div className="flex h-100 items-center justify-center">
       <div className="flex w-150 flex-col">
-        <Button text="Pelaa" onClick={()=>navigate('/lobby')} />
-        <Button text="Säännöt" onClick={()=>navigate('/rules')} />
+        <Button text="Pelaa" onClick={async ()=> await navigate('/lobby')} />
+        <Button text="Säännöt" onClick={async ()=> await navigate('/rules')} />
       </div>
     </div>
   );

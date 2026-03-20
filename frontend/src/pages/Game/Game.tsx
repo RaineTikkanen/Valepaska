@@ -3,9 +3,11 @@ import type { Card } from '../../types/Card';
 import deck from '../../assets/deck';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { playCards, addCards, clearCards } from './handSlice';
+import { setRoomId, setUsers, clearRoom } from '../Lobby/roomSlice.js';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
-import { socket } from '../../socket';
+import { socket } from '../../services/webSocketService/socket'
+
 
 function Game() {
   
