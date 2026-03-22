@@ -1,45 +1,47 @@
 import Hand from './Hand';
-import type { Card } from '../../types/Card';
-import deck from '../../assets/deck';
+import type { Card } from '../../types/game.js';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { playCards, addCards, clearCards } from './handSlice';
-import { setRoomId, setUsers, clearRoom } from '../Lobby/roomSlice.js';
+import { playCards} from './handSlice';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
-import { socket } from '../../services/webSocketService/socket'
+import { leaveRoom } from '../Lobby/socketSlice.js';
+import { leaveGame } from './gameSlice.js'
+import { useNavigate } from 'react-router';
 
 
-function Game() {
+const Game = () => {
   
-  const hand = useAppSelector((state) => state.hand);
   const dispatch = useAppDispatch();
-  const [isConnected, setIsConnected]=useState(socket.connected);
+  const navigate = useNavigate();
 
-  console.log('Connected: ', isConnected);
-  
-  useEffect(()=>{
-    const onHandUpdate =(cards: Card[]) => {
-      dispatch(addCards(cards));
-      console.log('hand Updated');
-    };
-    
-    socket.on('handUpdate', onHandUpdate);
-
-    return()=>{
-      socket.off('handUpdate', onHandUpdate);
-    };
-  }, []);
-
-
-
-  function playSelectedCards(){
+  const playSelectedCards= () =>{
     dispatch(playCards());
   }
 
+  const game = useAppSelector((state)=> state.game);
 
+  useEffect(()=>{
+    if (!game.isActive) navigate('/lobby')
+  }, [])
+
+
+  const onLeaveGame = () => {
+    if(window.confirm("Haluatko varmasti poistua pelistä?")){
+      dispatch(leaveGame());
+      navigate('/lobby')
+    }
+  }
+
+  
 
   return (
     <div className="">
+
+      <Button 
+        text="Poistu pelistä" 
+        onClick={onLeaveGame} >
+      </Button>
+
       <div className="absolute inset-x-0 bottom-0 flex flex-col">
         <div className="flex justify-center">
           <Hand />

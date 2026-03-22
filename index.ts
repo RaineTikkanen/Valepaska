@@ -4,15 +4,24 @@ import { createServer } from 'node:http';
 import { PORT, REDIS_URL, WEBSOCKET_PORT } from './utils/config.js'
 import gameService from './services/gameService.js';
 import { gameStateUpdate } from './services/gameService.type.js'
-import { v7 as uuidv7 } from 'uuid';
 import cors from 'cors';
 import { socketLogger } from './utils/middleware/socketLogger.js';
-import redisController from './redis/controller.js'
 import { Card } from './deck/deck.type.js';
+
+export enum SocketEvents {
+  PING = 'ping',
+  CREATE_ROOM = 'createRoom',
+  JOIN_ROOM = 'joinRoom',
+  START_GAME = 'startGame',
+  LEAVE_ROOM = 'leaveRoom',
+  DOUBT = 'doubt',
+  PLAY = 'play',
+  GET_GAME_STATE = 'getGameState'
+}
 
 export interface ServerToClientEvents {
   ping: () => void;
-  userJoinedGame: (players: string[]) => void;
+  roomUpdate: (roomId: string, players: string[]) => void;
   gameStarts:() => void;
   gameStateUpdate: (gameState: gameStateUpdate) => void;
   handUpdate: (cards: Card[]) => void;
@@ -20,18 +29,18 @@ export interface ServerToClientEvents {
 
 export interface ClientToServerEvents {
   ping: () => void;
-  createGame: (userId:string, callback:(id: string) => void) => void;
-  joinGame: (gameId: string, userId: string, callback: (result: string) => void) => void;
-  startGame: (gameId: string, callback: (result: string) => void) => void;
+  createRoom: (userId:string, callback:(result: string) => void) => void;
+  joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
+  startGame: (roomId: string, callback: (result: string) => void) => void;
   doubt: (callback: (result: string) => void) => void;
   play: (callback: (result: string) => void) => void;
-  getGameState: (gameId: string, playerId: string) => void;
-  leaveGame: (gameId: string, playerId: string) => void;
+  getGameState: (roomId: string, userId: string) => void;
+  leaveRoom: (roomId: string, userId: string, callback:(result: string) => void) => void;
 }
 
 interface SocketData {
   userId: string;
-  gameId: string;
+  roomId: string;
 }
 
 const app = express()
@@ -45,7 +54,6 @@ const io = new Server<
     origin: '*'
   }
 });
-
 
 
 app.use(express.static('dist'))
@@ -66,23 +74,6 @@ app.get('/health', (_req, res) => {
   res.send('OK');
 });
 
-
-app.get('/game/:id', async (req, res) => {
-  const id = req.params.id
-  const result = await redisController.getGameState(id);
-  res.send(result);
-});
-
-app.delete('/game/:id', async (req, res)=>{
-  const id = req.params.id
-  const result = await redisController.deleteGame(id)
-  res.send(result)
-})
-
-app.get('/userId', (_req, res) => {
-  const id = uuidv7();
-  res.json({'id':id});
-})
 
 
 server.listen(PORT, () => {

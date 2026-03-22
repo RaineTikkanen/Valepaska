@@ -1,16 +1,18 @@
 import { configureStore, Tuple } from '@reduxjs/toolkit';
 import handReducer from './pages/Game/handSlice';
-import roomReducer from './pages/Lobby/roomSlice';
+import socketSlice from './pages/Lobby/socketSlice';
+import gameSlice  from './pages/Game/gameSlice';
 import loggerMiddleware from './middleware/logger';
-import socketService from './middleware/socketService';
+import socketMiddleware from './middleware/socketService';
 
 export const store = configureStore({
 
   reducer: {
     hand: handReducer,
-    room: roomReducer,
+    socket: socketSlice,
+    game: gameSlice,
   },
-  middleware: () => new Tuple(loggerMiddleware, socketService),
+  middleware: () => new Tuple(loggerMiddleware, socketMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

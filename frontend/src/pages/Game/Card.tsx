@@ -1,5 +1,5 @@
 import cardImages from '../../assets/cardImages';
-import type { Card } from '../../types/Card';
+import type { Card } from '../../types/game.js'
 import {useAppSelector, useAppDispatch} from '../../hooks/redux';
 import { toggleCardSelectState, selectSelectedCards } from './handSlice';
 import { useState, useEffect } from 'react';

@@ -1,6 +1,8 @@
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 function Header() {
+  const location = useLocation()
+  if (location.pathname === '/game') return
   return (
     <header className="flex flex-row items-center justify-between py-6">
       <Link to="/" 

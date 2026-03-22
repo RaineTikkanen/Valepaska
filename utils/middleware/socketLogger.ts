@@ -1,5 +1,6 @@
 import { Socket } from 'socket.io';
 import { ClientToServerEvents } from '../../index.js';
+import { SocketEvents } from '../../index.js';
 
 export const socketLogger = (socket: Socket, next: (err?: Error) => void) => {
 
@@ -14,27 +15,27 @@ export const socketLogger = (socket: Socket, next: (err?: Error) => void) => {
     );
   });
 
-  socket.on('createGame', (userId) => {
+  socket.on(SocketEvents.CREATE_ROOM, (userId) => {
     console.log(`userId: ${userId}\n`);
   });
 
-  socket.on('joinGame', (gameId, userId) => {
-    console.log(`gameId: ${gameId}\nuserId: ${userId}\n`);
+  socket.on(SocketEvents.JOIN_ROOM, (roomId, userId) => {
+    console.log(`roomId: ${roomId}\nuserId: ${userId}\n`);
   });
 
-  socket.on('startGame', (gameId) => {
-    console.log(`gameId: ${gameId}\n`);
+  socket.on(SocketEvents.START_GAME, (roomId) => {
+    console.log(`roomId: ${roomId}\n`);
   });
 
-  socket.on('leaveGame', (gameId, userId) => {
-    console.log(`gameId: ${gameId}\nuserId: ${userId}\n`);
+  socket.on(SocketEvents.LEAVE_ROOM, (roomId, userId) => {
+    console.log(`roomId: ${roomId}\nuserId: ${userId}\n`);
   });
 
-  socket.on('doubt', (userId) => {
+  socket.on(SocketEvents.DOUBT, (userId) => {
     console.log(`userId: ${userId}\n`);
   });
 
-  socket.on('play', (userId) => {
+  socket.on(SocketEvents.PLAY, (userId) => {
     console.log(`userId: ${userId}\n`);
   });
 

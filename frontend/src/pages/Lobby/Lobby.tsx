@@ -1,20 +1,20 @@
 import { useState, useEffect } from 'react';
-import {socket} from '../../services/webSocketService/socket.js'
 import Button from '../../components/Button';
 import { useNavigate } from 'react-router';
 import useField from '../../hooks/useField';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { setRoomId, setUsers, clearRoom } from './roomSlice.js';
+import { connect, createRoom, joinRoom, leaveRoom} from './socketSlice.js';
+import { startGame } from '../Game/gameSlice.js';
 
-function Lobby (){
-  const [isConnected, setIsConnected]=useState(socket.connected);
+
+const Lobby = () => {
   const [userId, setUserId] = useState('');
   const inputGameId = useField('text', 'Game ID');
   const navigate = useNavigate();
 
-  const room = useAppSelector((state) => state.room);
+  const socket = useAppSelector((state) => state.socket);
+  const game = useAppSelector((state)=> state.game);
   const dispatch = useAppDispatch();
-  
 
   const getGuestUserId = async () => {
     const response = await fetch('http://localhost:3000/userId');
@@ -22,14 +22,6 @@ function Lobby (){
     setUserId(result.id);
     localStorage.setItem('userId', result.id);
   };
-
-  const onConnect = () => {
-    setIsConnected(true);
-  };
-
-  const onDisconnect = () => {
-    setIsConnected(false);
-  };  
 
   const init=async()=>{
     const userIdFromStorage=localStorage.getItem('userId');
@@ -43,95 +35,49 @@ function Lobby (){
 
   useEffect(()=>{
     init().catch((e)=>console.log(e));
-
-
-    socket.connect();
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-
-    return()=>{
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-    };
+    dispatch(connect());
   },[]);
 
   useEffect(()=>{
-    const onGameStart = () =>{
-      navigate('/game');
-    };
+    if(game.isActive){
+      navigate('/game')
+    }
+  },[game])
 
-    const onJoinedGame = (users: string[]) => {
-      dispatch(setUsers(users));
-    };
 
-    socket.on('gameStarts', onGameStart);
-    socket.on('userJoinedGame', onJoinedGame);
-
-    return()=>{
-      socket.off('gameStarts', onGameStart);
-    };
-  }, []);
 
   const createGame = () => {
-    socket.emit('createGame', userId, (gameId: string) => {
-      dispatch(setRoomId(gameId));
-    });
-    
-
+    dispatch(createRoom());
   };
 
   const joinGame = () => {
-    socket.emit('joinGame', inputGameId.value, userId, (result: string) => {
-      if (result==='ERR'){
-        window.alert('Error joining game. Please check the Game ID and try again.');
-        return;
-      }
-      dispatch(setRoomId(inputGameId.value));
-      localStorage.setItem('gameId', inputGameId.value);
-    });
+    dispatch(joinRoom(inputGameId.value));
   };
 
   const leaveGame = () => {
-    localStorage.clear();
-    dispatch(clearRoom());
-    socket.emit('leaveGame', room.roomId, userId);
+    dispatch(leaveRoom());
   };
 
-  const startGame = () => {
-    socket.emit('startGame', room.roomId, (result:string)=>{
-      if(result==='ERR'){
-        console.log('error starting game');
-        window.alert('Error starting game. Please try again.');
-      }
-    });
-  };
-
-  if (!isConnected || !userId){
+  if (!socket.isConnected || !userId){
     return(
       <h2 className="animate-pulse">Connecting...</h2>
     );
   }
 
-  const userList = room.users.map((user, index) => (
-    <p key={index}>{user}</p>
+  const userList = socket.users.map((user, index) => (
+    <li key={index}>{user}</li>
   ));
 
   return(
     <div className="flex flex-col p-3">
       <h1 className="py-5 text-2xl">Lobby</h1>
       {userId && <h2>Vieras ID: {userId}</h2>}
-      {room.roomId && <h2>Pelin ID: {room.roomId}</h2>}
-      
-      {room.users.length !== 0 ?
-        <div className="py-2 transition-all">
-          <h2 className="font-bold">Pelaajat:</h2>
-          {userList}
-        </div> 
-        :
-        <div />
-      }
-
-      <Button text="Luo peli" onClick={createGame} disabled={room.roomId!==''} />
+      {socket.roomId && <h2>Olet pelissä: {socket.roomId}</h2>}
+      <ul>
+        <h2> Pelaajat: </h2>
+        {userList}
+      </ul>
+      <Button text="Luo peli" onClick={createGame} disabled={socket.roomId!==''} />
       <label>
         Give Game ID
       </label>
@@ -143,18 +89,18 @@ function Lobby (){
         <Button 
           text="Poistu pelistä" 
           onClick={()=>leaveGame()} 
-          disabled={room.roomId===''} 
+          disabled={socket.roomId===''} 
         />
         <Button 
           text="Liity peliin" 
           onClick={()=>joinGame()} 
-          disabled={inputGameId.value==='' || room.roomId!==''} 
+          disabled={inputGameId.value==='' || socket.roomId!==''} 
         />
       </div>
       <Button 
         text="Aloita peli" 
-        onClick={()=>startGame()} 
-        disabled={room.roomId==''} 
+        onClick={()=>dispatch(startGame())} 
+        disabled={socket.roomId==''} 
       />
     </div>
   );
