@@ -73,11 +73,11 @@ interface GameStateUpdate {
 type Play = {
   player: string,
   statement: Statement
-}
+};
 
 type Statement = {
   value: number,
   amount: number,
-}
+};
 
 export type { Card, GameStateUpdate, Play, Statement };

@@ -1,4 +1,4 @@
-import type { Middleware } from 'redux'
+import type { Middleware } from 'redux';
 import { isAction } from '@reduxjs/toolkit';
 
 

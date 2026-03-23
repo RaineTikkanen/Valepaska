@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { WEBSOCKET_PORT } from '../../utils/config.js';
-import type { Card } from '../types/game.js';
+import type { Card, GameStateUpdate } from '../types/game.js';
 
 const URL = `http://localhost:${WEBSOCKET_PORT}`;
 
@@ -8,14 +8,21 @@ const URL = `http://localhost:${WEBSOCKET_PORT}`;
 export const SocketEvents = {
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
-  GAME_STARTS: 'gameStarts',
+  PING: 'ping',
+
+//ServerToClient
   ROOM_UPDATE: 'roomUpdate',
+  GAME_STARTS: 'gameStarts',
+  GAME_STATE_UPDATE: 'gameStateUpdate',
   HAND_UPDATE: 'handUpdate',
+
+//ClientToServer
   CREATE_ROOM: 'createRoom',
   JOIN_ROOM: 'joinRoom',
-  START_GAME: 'startGame',
   LEAVE_ROOM: 'leaveRoom',
-  PING: 'ping',
+  START_GAME: 'startGame',
+  DOUBT: 'doubt',
+  PLAY: 'play',
 } as const;
 
 export interface ClientToServerEvents {
@@ -31,6 +38,7 @@ export interface ServerToClientEvents {
   ping: () => void;
   gameStarts: () => void; 
   roomUpdate: (roomId: string, players: string[]) => void;
+  gameStateUpdate: (gameState: GameStateUpdate) => void;
   handUpdate: (cards: Card[]) => void;
 }
 

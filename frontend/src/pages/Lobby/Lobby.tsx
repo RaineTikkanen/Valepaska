@@ -5,7 +5,15 @@ import useField from '../../hooks/useField';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { connect, createRoom, joinRoom, leaveRoom} from './socketSlice.js';
 import { startGame } from '../Game/gameSlice.js';
+import { isString } from '../../../utils/typeGuards.js'
 
+
+const parseUserId = (result: unknown) => {
+  if(result instanceof Object && 'id' in result && isString(result.id)){
+    return result.id;
+  }else throw new Error('Invalid userId');
+
+};
 
 const Lobby = () => {
   const [userId, setUserId] = useState('');
@@ -16,11 +24,16 @@ const Lobby = () => {
   const game = useAppSelector((state)=> state.game);
   const dispatch = useAppDispatch();
 
-  const getGuestUserId = async () => {
-    const response = await fetch('http://localhost:3000/userId');
-    const result = await response.json();
-    setUserId(result.id);
-    localStorage.setItem('userId', result.id);
+  const getGuestUserId = async () => {  
+    try{
+      const response = await fetch('http://localhost:3000/userId');
+      const result = await response.json();
+      const userId = parseUserId(result);
+      setUserId(userId);
+      localStorage.setItem('userId', userId);
+    }catch(e){
+      console.error(e);
+    }
   };
 
   const init=async()=>{
@@ -40,9 +53,9 @@ const Lobby = () => {
 
   useEffect(()=>{
     if(game.isActive){
-      navigate('/game')
+      navigate('/game');
     }
-  },[game])
+  },[game]);
 
 
 
@@ -64,9 +77,10 @@ const Lobby = () => {
     );
   }
 
-  const userList = socket.users.map((user, index) => (
+  const UserList = socket.users.map((user, index) => (
     <li key={index}>{user}</li>
   ));
+
 
   return(
     <div className="flex flex-col p-3">
@@ -75,7 +89,7 @@ const Lobby = () => {
       {socket.roomId && <h2>Olet pelissä: {socket.roomId}</h2>}
       <ul>
         <h2> Pelaajat: </h2>
-        {userList}
+        {UserList}
       </ul>
       <Button text="Luo peli" onClick={createGame} disabled={socket.roomId!==''} />
       <label>
@@ -104,6 +118,6 @@ const Lobby = () => {
       />
     </div>
   );
-}
+};
 
 export default Lobby;

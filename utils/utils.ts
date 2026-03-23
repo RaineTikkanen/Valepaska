@@ -1,6 +1,6 @@
 import { validate as uuidValidate } from 'uuid';
 
-const parseId = (id: unknown): string => {
+export const parseId = (id: unknown): string => {
   if (typeof id !== 'string') {
     throw new Error('Invalid id');
   }
@@ -10,4 +10,6 @@ const parseId = (id: unknown): string => {
   return id;
 }
 
-export { parseId }
+export const getRandomInt = (max:number): number => {
+  return Math.floor(Math.random() * max);
+}

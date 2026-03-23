@@ -1,8 +1,9 @@
-import type { Middleware } from 'redux'
+import type { Middleware } from 'redux';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { isAction } from '@reduxjs/toolkit';
 import { socket } from '../services/socket.js';
-import type { Card } from '../types/game.js';
+import {isString} from '../../utils/typeGuards.js'
+import type { Card, GameStateUpdate } from '../types/game.js';
 import { 
   connect, 
   disconnect, 
@@ -13,26 +14,25 @@ import {
   updateUsers,
   joinRoom,
   leaveRoom,
-  clearRoom,
 } from '../pages/Lobby/socketSlice.js';
 
 import {
   gameStarted,
   startGame,
   leaveGame,
-} from '../pages/Game/gameSlice.js'
+} from '../pages/Game/gameSlice.js';
 
 import {
   setCards
-} from '../pages/Game/handSlice.js'
+} from '../pages/Game/handSlice.js';
 
 import { SocketEvents } from '../services/socket.js';
 
 let storeRef: {dispatch: <T extends {
-        [extraProps: string]: unknown;
-        type: string;
-    }>(action: T, ...extraArgs: any[]) => T;
-    getState(): any;}| null = null;
+  [extraProps: string]: unknown;
+  type: string;
+}>(action: T, ...extraArgs: any[]) => T;
+getState(): any;}| null = null;
 
 socket.on(SocketEvents.CONNECT, () => {
   if (storeRef) storeRef.dispatch(connected());
@@ -57,7 +57,11 @@ socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
   if (storeRef) storeRef.dispatch(setCards(cards));
 });
 
-const socketService: Middleware =  (store) => {
+socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
+  console.log(gameState)
+});
+
+const socketService: Middleware = (store) => {
 
   storeRef = store;
 
@@ -77,57 +81,61 @@ const socketService: Middleware =  (store) => {
         }
 
         case createRoom.type: {
-          const userId = localStorage.getItem('userId')
+          const userId = localStorage.getItem('userId');
           if(userId){
             socket.emit(SocketEvents.CREATE_ROOM, userId, (result) =>{
               if (result == 'ERR') {
                 window.alert('Failed to create room');
               }
             });
-          }else window.alert("Failed to create room. UserId not found in store")
+          }else window.alert('Failed to create room. UserId not found in store');
           break;
         }
 
         case joinRoom.type: {
-          const userId = localStorage.getItem('userId')
+          const userId = localStorage.getItem('userId');
+          if(!isString(payload)) {
+            window.alert('Invalid roomId')
+            break;
+          }
           if (userId){
-          socket.emit(SocketEvents.JOIN_ROOM, payload.roomId, userId, (result) => {
-            if (result == 'ERR') {
-              window.alert('Failed to join room. Please check the game ID and try again.');
-            }
-          });
-        }else window.alert('Failed to join room. Could not find userId from localstorage.');
+            socket.emit(SocketEvents.JOIN_ROOM, payload, userId, (result) => {
+              console.log(result)
+              if (result == 'ERR') {
+                window.alert('Failed to join room. Please check the game ID and try again.');
+              }
+            });
+          }else window.alert('Failed to join room. Could not find userId from localstorage.');
           break;
         }
 
         case leaveRoom.type: {
-          const userId = localStorage.getItem('userId')
-          const roomId = store.getState().socket.roomId
-          if (userId && roomId){
+          const userId = localStorage.getItem('userId');
+          const roomId = store.getState().socket.roomId;
+          if (userId && roomId && isString(roomId)){
             socket.emit(SocketEvents.LEAVE_ROOM, roomId, userId, (result)=>{
               if (result === 'ERR') {
-                window.alert('Failed to leave room')
+                window.alert('Failed to leave room');
               }
-            })
-            store.dispatch(clearRoom())
-          }else window.alert("Failed to leave room. No userId or roomId")
+            });
+          }else window.alert('Failed to leave room. No userId or roomId');
           break;
         }
         
         case startGame.type: {
-          const roomId = store.getState().socket.roomId
+          const roomId = store.getState().socket.roomId;
           if(roomId){
             socket.emit(SocketEvents.START_GAME, roomId, (result)=>{
               if (result === 'ERR') {
-                window.alert('Failed to start game')
+                window.alert('Failed to start game');
               }
-            })
-          }else window.alert('Failed to start game. Cannot find gameId from store')
+            });
+          }else window.alert('Failed to start game. Cannot find gameId from store');
           break;
         }
 
         case leaveGame.type: {
-          store.dispatch(leaveRoom())
+          store.dispatch(leaveRoom());
         }
       }
     }

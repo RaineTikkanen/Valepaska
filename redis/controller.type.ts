@@ -18,6 +18,7 @@ export interface Statement {
 }
 
 export interface GameState {
+  isActive: boolean;
   turn: string | null;
   deck: Card[];
   playDeck: Card[];

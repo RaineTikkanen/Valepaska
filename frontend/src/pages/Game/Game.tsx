@@ -5,7 +5,7 @@ import { playCards} from './handSlice';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
 import { leaveRoom } from '../Lobby/socketSlice.js';
-import { leaveGame } from './gameSlice.js'
+import { leaveGame } from './gameSlice.js';
 import { useNavigate } from 'react-router';
 
 
@@ -16,21 +16,21 @@ const Game = () => {
 
   const playSelectedCards= () =>{
     dispatch(playCards());
-  }
+  };
 
   const game = useAppSelector((state)=> state.game);
 
   useEffect(()=>{
-    if (!game.isActive) navigate('/lobby')
-  }, [])
+    if (!game.isActive) navigate('/lobby');
+  }, []);
 
 
   const onLeaveGame = () => {
-    if(window.confirm("Haluatko varmasti poistua pelistä?")){
+    if(window.confirm('Haluatko varmasti poistua pelistä?')){
       dispatch(leaveGame());
-      navigate('/lobby')
+      navigate('/lobby');
     }
-  }
+  };
 
   
 
@@ -39,8 +39,8 @@ const Game = () => {
 
       <Button 
         text="Poistu pelistä" 
-        onClick={onLeaveGame} >
-      </Button>
+        onClick={onLeaveGame}
+      />
 
       <div className="absolute inset-x-0 bottom-0 flex flex-col">
         <div className="flex justify-center">
@@ -50,6 +50,6 @@ const Game = () => {
       </div>
     </div>
   );
-}
+};
 
 export default Game;

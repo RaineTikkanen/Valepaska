@@ -21,15 +21,15 @@ export const gameSlice = createSlice({
   name: 'game',
   initialState,
   reducers: {
-    startGame: ()  => {
-      return
+    startGame: () => {
+      return;
     },
     gameStarted: (state) => {
-      state.isActive = true
+      state.isActive = true;
     },
     leaveGame: (state) => initialState
   }
-})
+});
 
 
 export const {
@@ -38,4 +38,4 @@ export const {
   leaveGame
 } = gameSlice.actions;
 
-export default gameSlice.reducer
+export default gameSlice.reducer;

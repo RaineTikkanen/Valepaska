@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { v7 as uuidv7 } from 'uuid';
 import redisController from '../redis/controller.js';
-import { parseId } from '../utils/typeGuards.js';
+import { parseId } from '../utils/utils.js';
 import { SocketEvents } from '../index.js';
 
 const gameService = (io: Server, socket: Socket) => {
@@ -14,7 +14,7 @@ const gameService = (io: Server, socket: Socket) => {
     await redisController.addUserToGame(roomId, userId)
     await socket.join(roomId);
     await socket.join(userId)
-    roomUpdate(roomId);
+    await roomUpdate(roomId);
   }
 
 
@@ -52,20 +52,19 @@ const gameService = (io: Server, socket: Socket) => {
     if(users === null) throw new Error('Users not found');
 
     if(users.length===0){
-      redisController.deleteRoom(roomId)
+      await redisController.deleteRoom(roomId)
     }
 
     const userIds = users.map((user)=>user.id);
-    io.to(roomId).emit('roomUpdate', roomId, userIds);
+    io.to(roomId).emit(SocketEvents.ROOM_UPDATE, roomId, userIds);
   }
 
   const startGame = async (roomId: string, callback: (result:string) => void) => {
     try{
       const parsedRoomId=parseId(roomId)
-      io.to(parsedRoomId).emit('gameUpdate');
-      io.to(parsedRoomId).emit('gameStarts');
+      io.to(parsedRoomId).emit(SocketEvents.GAME_STARTS);
       
-      await redisController.dealInitialCards(parsedRoomId);
+      await redisController.initiateGame(parsedRoomId);
       
       const users = await redisController.getUsersInAGame(parsedRoomId);
       if(!users) throw new Error('no users found');
@@ -73,8 +72,12 @@ const gameService = (io: Server, socket: Socket) => {
       for(const user of users){ 
         const hand = user.hand[0];
         console.log(hand)
-        io.to(user.id).emit('handUpdate', user.hand[0])
+        io.to(user.id).emit(SocketEvents.HAND_UPDATE, user.hand[0])
       }
+
+      const gameStateUpdate = await redisController.getGameStateUpdate(parsedRoomId);
+      if(!gameStateUpdate)throw new Error('Cant get game state')
+      io.to(parsedRoomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
     }catch(e){
       console.error('ERROR: ', e)
       callback('ERR')
@@ -84,18 +87,19 @@ const gameService = (io: Server, socket: Socket) => {
 
   const leaveRoom = async (roomId: string, userId: string, callback:(result: string) => void ) => {
     try{
-      const parsedRoomId=parseId(roomId);
-      const parsedUserId=parseId(userId);
+      const parsedRoomId = parseId(roomId);
+      const parsedUserId = parseId(userId);
+
       await redisController.removeUserFromGame(parsedRoomId, parsedUserId);
+      await socket.leave(parsedRoomId);
+      await socket.leave(parsedUserId);
+
       callback('OK');
-      roomUpdate(parsedRoomId);
-      socket.leave(parsedRoomId);
-      socket.leave(parsedUserId)
+      await roomUpdate(parsedRoomId);
     }catch(e) {
-      console.error('ERROR: ', e) ;
+      console.error('ERROR: ', e);
       callback('ERR');
     }
-    
   }
 
   const doubt = (callback: (result: string) => void) => {

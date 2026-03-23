@@ -37,8 +37,9 @@ export const socketSlice = createSlice({
     joinRoom: (state, action: PayloadAction<string>) => {
       return;
     },
-    leaveRoom: () => {
-      return;
+    leaveRoom: (state) => {
+      state.users = [];
+      state.roomId = '';
     },
     updateRoomId: (state, action: PayloadAction<{roomId: string}>) => {
       state.roomId = action.payload.roomId;
@@ -46,10 +47,6 @@ export const socketSlice = createSlice({
     updateUsers: (state, action: PayloadAction<{users: string[]}>) => {
       state.users = action.payload.users;
     },
-    clearRoom: (state) => {
-      state.users = [];
-      state.roomId = '';
-    }
   }
 });
 
@@ -64,7 +61,6 @@ export const {
   leaveRoom,
   updateRoomId,
   updateUsers,
-  clearRoom,
 } = socketSlice.actions;
 
 export const selectIsConnected = (state: RootState) => state.socket.isConnected;

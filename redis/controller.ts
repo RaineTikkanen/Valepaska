@@ -3,8 +3,8 @@ import { REDIS_URL } from '../utils/config.js'
 import getShuffledDeck from '../deck/deck.js'
 import { Card } from '../deck/deck.type.js';
 import { Play, User, GameState } from './controller.type.js';
-import { gameStateUpdate } from '../services/gameService.type.js';
-
+import { GameStateUpdate } from '../services/gameService.type.js';
+import { getRandomInt } from '../utils/utils.js';
 
 
 
@@ -28,6 +28,7 @@ const createRoom = async (roomId: string ) => {
     roomId, 
     '$', 
     {
+      isActive: false,
       turn: null,
       deck: deck,
       playDeck: [],
@@ -56,7 +57,10 @@ const removeUserFromGame = async (roomId: string, userId: string) => {
 
 
 const addUserToGame = async (roomId: string, userId: string) => {
-  try{
+  const gameState = await getGameState(roomId);
+  if (gameState && gameState.isActive){
+    throw('Game is active. Can not join.')
+  }
     await client.json.arrAppend(
       roomId,
       '$.users',
@@ -65,9 +69,6 @@ const addUserToGame = async (roomId: string, userId: string) => {
         hand: []
       }
     )
-  }catch(e){
-    throw(e)
-  }
 }
 
 
@@ -194,10 +195,10 @@ const dealCardsToUserById = async (roomId: string, userId: string, amount: numbe
 
 
 /**
- * Deals 5 cards to each user in a game
+ * Deals 5 cards to each user in a game, draws the starting player and changes 'isActive' to 'true'
  * @param roomId   
  */
-const dealInitialCards = async (roomId: string) => {
+const initiateGame = async (roomId: string) => {
   const users = await getUsersInAGame(roomId)
 
   if(users==null) return
@@ -205,6 +206,19 @@ const dealInitialCards = async (roomId: string) => {
   for (const user of users) {
     await dealCardsToUserById(roomId, user.id, 5);
   }
+
+  const starterIndex = getRandomInt(users.length);
+  console.log("Starter: ", starterIndex);
+  await client.json.set(
+    roomId,
+    '$.turn',
+    starterIndex
+  )
+  await client.json.set(
+    roomId,
+    '$.isActive',
+    true
+  )
 }
 
 
@@ -220,7 +234,7 @@ const getGameState = async (roomId: string): Promise<GameState | null>=> {
   return await client.json.get(roomId) as GameState | null;
 }
 
-const getGameStateUpdate = async (roomId: string, ): Promise<gameStateUpdate | null> => {
+const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | null> => {
   const gameState = await getGameState(roomId)
   if (gameState===null) return null
   return {
@@ -238,12 +252,12 @@ const getUserById = async (roomId: string, userId: string): Promise<User | null 
   return null
 }
 
-/*
+
 const getUserHand = async (roomId: string, userId: string): Promise<Card[] | null> => {
   const users = getUserById(roomId, userId);
   return null
 }
-  */
+
 
 
 const setGameDeck = async (roomId: string, deck: Card[]) => {
@@ -262,7 +276,7 @@ export default{
   createRoom,
   deleteRoom,
   addUserToGame,
-  dealInitialCards,
+  initiateGame,
   dealCardsToUserById,
   getUsersInAGame,
   getGameStateUpdate,

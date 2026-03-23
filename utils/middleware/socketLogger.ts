@@ -48,7 +48,7 @@ export const socketLogger = (socket: Socket, next: (err?: Error) => void) => {
   socket.on('connect_error', (err) => {
     const timeStamp= new Date().toISOString();
     console.log(`\n[${timeStamp}] Connection error on socket ${socket.id}: ${err.message}`);
-  });
+});
   
 
   next();

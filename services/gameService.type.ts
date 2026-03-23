@@ -8,7 +8,7 @@ export interface Statement {
   amount: number;
 }
 
-export interface gameStateUpdate {
+export interface GameStateUpdate {
   turn: string | null;
   lastPlay: Play | null;
 }
