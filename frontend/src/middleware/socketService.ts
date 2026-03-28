@@ -20,6 +20,7 @@ import {
   gameStarted,
   startGame,
   leaveGame,
+  setIsMyTurn
 } from '../pages/Game/gameSlice.js';
 
 import {
@@ -50,6 +51,7 @@ socket.on(SocketEvents.ROOM_UPDATE, (roomId: string, users: string[]) => {
 });
 
 socket.on(SocketEvents.GAME_STARTS, ()=>{
+  console.log("GAME IS INDEED STARTING")
   if (storeRef) storeRef.dispatch(gameStarted());
 });
 
@@ -58,8 +60,18 @@ socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
 });
 
 socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
-  console.log(gameState)
+  if(storeRef){
+    console.log(gameState)
+    const userId = localStorage.getItem('userId');
+    const turn = gameState.turn;
+    if(userId===turn)storeRef.dispatch(setIsMyTurn(true))
+    else{storeRef.dispatch(setIsMyTurn(false))}
+  }
 });
+
+socket.on(SocketEvents.ERROR, (error)=>{
+  console.log(error)
+})
 
 const socketService: Middleware = (store) => {
 
@@ -83,6 +95,7 @@ const socketService: Middleware = (store) => {
         case createRoom.type: {
           const userId = localStorage.getItem('userId');
           if(userId){
+            socket.emit('nonValid')
             socket.emit(SocketEvents.CREATE_ROOM, userId, (result) =>{
               if (result == 'ERR') {
                 window.alert('Failed to create room');

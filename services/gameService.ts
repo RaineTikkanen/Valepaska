@@ -62,22 +62,24 @@ const gameService = (io: Server, socket: Socket) => {
   const startGame = async (roomId: string, callback: (result:string) => void) => {
     try{
       const parsedRoomId=parseId(roomId)
-      io.to(parsedRoomId).emit(SocketEvents.GAME_STARTS);
       
       await redisController.initiateGame(parsedRoomId);
       
       const users = await redisController.getUsersInAGame(parsedRoomId);
-      if(!users) throw new Error('no users found');
+      if(!users) throw new Error('No users found');
+      if(users.length===1) throw new Error('Not enough players')
+      
+      io.to(parsedRoomId).emit(SocketEvents.GAME_STARTS);
 
       for(const user of users){ 
         const hand = user.hand[0];
-        console.log(hand)
-        io.to(user.id).emit(SocketEvents.HAND_UPDATE, user.hand[0])
+        io.to(user.id).emit(SocketEvents.HAND_UPDATE, hand)
       }
 
       const gameStateUpdate = await redisController.getGameStateUpdate(parsedRoomId);
       if(!gameStateUpdate)throw new Error('Cant get game state')
       io.to(parsedRoomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
+
     }catch(e){
       console.error('ERROR: ', e)
       callback('ERR')

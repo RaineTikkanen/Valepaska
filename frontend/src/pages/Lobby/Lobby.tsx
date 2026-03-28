@@ -114,7 +114,7 @@ const Lobby = () => {
       <Button 
         text="Aloita peli" 
         onClick={()=>dispatch(startGame())} 
-        disabled={socket.roomId==''} 
+        disabled={socket.users.length<2} 
       />
     </div>
   );

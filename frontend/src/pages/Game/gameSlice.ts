@@ -5,6 +5,7 @@ import type { Card, Play, Statement } from '../../types/game.js';
 
 export interface GameState {
   isActive: boolean;
+  isMyTurn: boolean
   turn: string;
   deck: Card[];
   lastPlay: Play | null;
@@ -12,6 +13,7 @@ export interface GameState {
 
 const initialState: GameState = {
   isActive: false,
+  isMyTurn: false,
   turn: '',
   deck: [],
   lastPlay: null,
@@ -27,7 +29,10 @@ export const gameSlice = createSlice({
     gameStarted: (state) => {
       state.isActive = true;
     },
-    leaveGame: (state) => initialState
+    leaveGame: () => initialState,
+    setIsMyTurn: (state, action: PayloadAction<boolean>) => {
+      state.isMyTurn = action.payload;
+    }
   }
 });
 
@@ -35,7 +40,8 @@ export const gameSlice = createSlice({
 export const {
   startGame,
   gameStarted,
-  leaveGame
+  leaveGame,
+  setIsMyTurn
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

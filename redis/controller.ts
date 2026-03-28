@@ -29,7 +29,7 @@ const createRoom = async (roomId: string ) => {
     '$', 
     {
       isActive: false,
-      turn: null,
+      turnIndex: null,
       deck: deck,
       playDeck: [],
       users:[],
@@ -208,10 +208,9 @@ const initiateGame = async (roomId: string) => {
   }
 
   const starterIndex = getRandomInt(users.length);
-  console.log("Starter: ", starterIndex);
   await client.json.set(
     roomId,
-    '$.turn',
+    '$.turnIndex',
     starterIndex
   )
   await client.json.set(
@@ -236,9 +235,15 @@ const getGameState = async (roomId: string): Promise<GameState | null>=> {
 
 const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | null> => {
   const gameState = await getGameState(roomId)
-  if (gameState===null) return null
+  if (gameState===null) throw new Error('GameState not found') 
+
+  const users = gameState.users;
+  console.log(gameState.turnIndex)
+  if(gameState.turnIndex===null) throw new Error('GameState.turnIndex not found')
+  const turn = users[gameState.turnIndex].id;
+
   return {
-    turn: gameState.turn,
+    turn: turn,
     lastPlay: null,
   }
 }

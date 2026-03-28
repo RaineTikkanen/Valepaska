@@ -9,6 +9,7 @@ export const SocketEvents = {
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
   PING: 'ping',
+  ERROR: 'connect_error',
 
 //ServerToClient
   ROOM_UPDATE: 'roomUpdate',
@@ -31,6 +32,7 @@ export interface ClientToServerEvents {
   joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
   startGame: (roomId: string, callback: (result: string) => void) => void; 
   leaveRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
+  nonValid: () => void;
 }
 
 
@@ -40,6 +42,7 @@ export interface ServerToClientEvents {
   roomUpdate: (roomId: string, players: string[]) => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   handUpdate: (cards: Card[]) => void;
+  
 }
 
 export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(URL, {

@@ -19,7 +19,7 @@ export interface Statement {
 
 export interface GameState {
   isActive: boolean;
-  turn: string | null;
+  turnIndex: number | null;
   deck: Card[];
   playDeck: Card[];
   users: User[];

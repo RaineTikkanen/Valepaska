@@ -7,6 +7,7 @@ import Button from '../../components/Button';
 import { leaveRoom } from '../Lobby/socketSlice.js';
 import { leaveGame } from './gameSlice.js';
 import { useNavigate } from 'react-router';
+import User from './User';
 
 
 const Game = () => {
@@ -41,7 +42,10 @@ const Game = () => {
         text="Poistu pelistä" 
         onClick={onLeaveGame}
       />
-
+      <div className='flex flex-row gap-5 justify-center'>
+        <User user="Käyttäjä 1"/>
+        <User user="Käyttäjä 2"/>
+      </div>
       <div className="absolute inset-x-0 bottom-0 flex flex-col">
         <div className="flex justify-center">
           <Hand />
