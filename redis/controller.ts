@@ -59,7 +59,7 @@ const removeUserFromGame = async (roomId: string, userId: string) => {
 const addUserToGame = async (roomId: string, userId: string) => {
   const gameState = await getGameState(roomId);
   if (gameState && gameState.isActive){
-    throw('Game is active. Can not join.')
+    throw new Error('Game is active. Can not join.')
   }
     await client.json.arrAppend(
       roomId,
