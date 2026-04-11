@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
-import type { Card } from '../../types/Card';
+import type { Card } from '../../types/game.js';
 
 export interface HandState {
   cards: Array<Card>;
@@ -17,8 +17,8 @@ export const handSlice = createSlice({
   name: 'hand',
   initialState,
   reducers: {
-    addCards: (state, action: PayloadAction<Array<Card>>) => {
-      state.cards = state.cards.concat(action.payload);
+    setCards: (state, action: PayloadAction<Array<Card>>) => {
+      state.cards = action.payload;
       state.cards.sort((a, b) => a.value - b.value);
     },
     removeCards: (state, action: PayloadAction<Array<Card>>) => {
@@ -53,7 +53,7 @@ export const handSlice = createSlice({
 });
 
 export const {
-  addCards,
+  setCards,
   removeCards,
   clearCards,
   playCards,

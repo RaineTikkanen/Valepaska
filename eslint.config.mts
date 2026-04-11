@@ -4,7 +4,14 @@ import { defineConfig } from 'eslint/config';
 import stylistic from '@stylistic/eslint-plugin'
 
 export default defineConfig([
-  tseslint.configs.recommended,
+  tseslint.configs.recommendedTypeChecked,
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
+    },
+  },
   { 
     files: ['**/*.{js,mjs,cjs,ts,mts,cts}'], 
     languageOptions: { 
@@ -19,6 +26,7 @@ export default defineConfig([
       '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
       '@stylistic/indent': ['error', 2],
       '@stylistic/linebreak-style': ['error', 'unix'],
+      '@typescript-eslint/no-unsafe-assignment': 'error'
     }
   },
   {

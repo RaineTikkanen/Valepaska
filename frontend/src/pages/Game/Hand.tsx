@@ -1,7 +1,7 @@
 import CardComponent from './Card.tsx';
 import { useAppSelector } from '../../hooks/redux';
 
-function Hand() {
+const Hand = () => {
   const hand = useAppSelector((state) => state.hand);
   return (
     <div className="flex h-60 flex-row overflow-scroll p-6 ease-in-out">
@@ -10,6 +10,6 @@ function Hand() {
       ))}
     </div>
   );
-}
+};
 
 export default Hand;

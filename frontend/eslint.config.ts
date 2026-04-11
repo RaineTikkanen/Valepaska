@@ -6,7 +6,14 @@ import stylistic from '@stylistic/eslint-plugin';
 import tailwind from 'eslint-plugin-tailwindcss';
 
 export default defineConfig([
-  tseslint.configs.recommended, 
+  tseslint.configs.recommendedTypeChecked,
+    {
+      languageOptions: {
+        parserOptions: {
+          projectService: true,
+        },
+      },
+    },
   pluginReact.configs.flat.recommended,
   ...tailwind.configs['flat/recommended'],
   {
@@ -46,9 +53,11 @@ export default defineConfig([
       '@stylistic/jsx-quotes': ['error', 'prefer-double'],
       '@stylistic/no-multi-spaces': ['error'],
       '@stylistic/semi': ['error'],
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**'],
+    ignores: ['dist/**', 'node_modules/**', 'eslint.config.ts'],
   },
 ]);
