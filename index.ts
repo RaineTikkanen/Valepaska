@@ -14,13 +14,13 @@ export const SocketEvents = {
   DISCONNECT: 'disconnect',
   PING: 'ping',
 
-//ServerToClient
+  //ServerToClient
   ROOM_UPDATE: 'roomUpdate',
   GAME_STARTS: 'gameStarts',
   GAME_STATE_UPDATE: 'gameStateUpdate',
   HAND_UPDATE: 'handUpdate',
 
-//ClientToServer
+  //ClientToServer
   CREATE_ROOM: 'createRoom',
   JOIN_ROOM: 'joinRoom',
   LEAVE_ROOM: 'leaveRoom',
@@ -83,7 +83,7 @@ app.get('/health', (_req, res) => {
   res.send('OK');
 });
 
-app.get('/userId', async (_req, res) => {
+app.get('/userId', (_req, res) => {
   const id = uuidv7();
   console.log('GuestUserId created: ', id)
   res.json({'id':id});

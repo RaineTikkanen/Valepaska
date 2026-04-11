@@ -14,16 +14,16 @@ function Home() {
   const navigate = useNavigate();
   return (
     <div className="flex h-100 items-center justify-center">
-      <Modal show={visible} onClose={toggleModal} header='Pelaa'>
-        <div className='flex flex-col'>
-          <Button text="Kirjaudu sisään" onClick={()=>console.log("logIn")}/>
-          <Button text="Pelaa vieraana" onClick={async ()=> await navigate('/lobby')}/>
+      <Modal show={visible} onClose={toggleModal} header="Pelaa">
+        <div className="flex flex-col">
+          <Button text="Kirjaudu sisään" onClick={()=>console.log('logIn')} />
+          <Button text="Pelaa vieraana" onClick={()=> void navigate('/lobby')} />
         </div>
         
       </Modal>
       <div className="flex w-150 flex-col">
         <Button text="Pelaa" onClick={toggleModal} />
-        <Button text="Säännöt" onClick={async ()=> await navigate('/rules')} />
+        <Button text="Säännöt" onClick={()=> void navigate('/rules')} />
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { RootState } from '../../store';
-import type { Card, Play, Statement } from '../../types/game.js';
+import type { Card, Play } from '../../types/game.js';
 
 export interface GameState {
   isActive: boolean;

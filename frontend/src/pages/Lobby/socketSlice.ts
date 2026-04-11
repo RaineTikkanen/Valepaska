@@ -34,7 +34,7 @@ export const socketSlice = createSlice({
     createRoom: () => {
       return;
     },
-    joinRoom: (state, action: PayloadAction<string>) => {
+    joinRoom: (_state, _action: PayloadAction<string>) => {
       return;
     },
     leaveRoom: (state) => {

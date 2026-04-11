@@ -61,14 +61,14 @@ const addUserToGame = async (roomId: string, userId: string) => {
   if (gameState && gameState.isActive){
     throw new Error('Game is active. Can not join.')
   }
-    await client.json.arrAppend(
-      roomId,
-      '$.users',
-      {
-        id: userId,
-        hand: []
-      }
-    )
+  await client.json.arrAppend(
+    roomId,
+    '$.users',
+    {
+      id: userId,
+      hand: []
+    }
+  )
 }
 
 
@@ -131,19 +131,6 @@ const appendUserHandByIndex = async (roomId: string, index: number, cards: Card[
     `$.users[${index}].hand`,
     cards
   )
-}
-
-
-/**
- * Returns stock deck
- * @param roomId 
- * @returns
- */
-const getDeck = async (roomId:string): Promise<Card[]> =>{
-  return client.json.get(
-    roomId,
-    {path: 'deck'}
-  ) as Promise<Card[]>
 }
 
 
@@ -248,33 +235,6 @@ const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | n
   }
 }
 
-const getUserById = async (roomId: string, userId: string): Promise<User | null > => {
-  const users = await getUsersInAGame(roomId);
-  if(!users) return null
-  
-  const user = users.filter((user) => user.id===userId);
-  console.log(user)
-  return null
-}
-
-
-const getUserHand = async (roomId: string, userId: string): Promise<Card[] | null> => {
-  const users = getUserById(roomId, userId);
-  return null
-}
-
-
-
-const setGameDeck = async (roomId: string, deck: Card[]) => {
-  await client.json.set(
-    roomId,
-    '$.deck',
-    deck
-  )
-}
-
-
-
 export default{
   play, 
   getGameState, 
@@ -285,5 +245,5 @@ export default{
   dealCardsToUserById,
   getUsersInAGame,
   getGameStateUpdate,
-  removeUserFromGame
+  removeUserFromGame,
 }

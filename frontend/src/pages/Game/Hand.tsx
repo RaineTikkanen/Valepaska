@@ -10,6 +10,6 @@ const Hand = () => {
       ))}
     </div>
   );
-}
+};
 
 export default Hand;

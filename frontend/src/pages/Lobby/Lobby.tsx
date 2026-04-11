@@ -3,15 +3,16 @@ import Button from '../../components/Button';
 import { useNavigate } from 'react-router';
 import useField from '../../hooks/useField';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { connect, createRoom, joinRoom, leaveRoom} from './socketSlice.js';
+import { connect, createRoom, joinRoom, leaveRoom } from './socketSlice.js';
 import { startGame } from '../Game/gameSlice.js';
-import { isString } from '../../../utils/typeGuards.js'
+import { isString } from '../../utils/typeGuards.js';
+
 
 
 const parseUserId = (result: unknown) => {
-  if(result instanceof Object && 'id' in result && isString(result.id)){
+  if (result instanceof Object && 'id' in result && isString(result.id)) {
     return result.id;
-  }else throw new Error('Invalid userId');
+  } else throw new Error('Invalid userId');
 
 };
 
@@ -21,41 +22,45 @@ const Lobby = () => {
   const navigate = useNavigate();
 
   const socket = useAppSelector((state) => state.socket);
-  const game = useAppSelector((state)=> state.game);
+  const game = useAppSelector((state) => state.game);
   const dispatch = useAppDispatch();
 
-  const getGuestUserId = async () => {  
-    try{
+
+
+  const getGuestUserId = async () => {
+    try {
       const response = await fetch('http://localhost:3000/userId');
-      const result = await response.json();
+
+      //TODO: Handle response
+      const result: unknown = await response.json();
       const userId = parseUserId(result);
       setUserId(userId);
       localStorage.setItem('userId', userId);
-    }catch(e){
+    } catch (e) {
       console.error(e);
     }
   };
 
-  const init=async()=>{
-    const userIdFromStorage=localStorage.getItem('userId');
+  const init = async () => {
+    const userIdFromStorage = localStorage.getItem('userId');
 
-    if(userIdFromStorage){
+    if (userIdFromStorage) {
       setUserId(userIdFromStorage);
-    }else{
+    } else {
       await getGuestUserId();
     }
   };
 
-  useEffect(()=>{
-    init().catch((e)=>console.log(e));
+  useEffect(() => {
+    init().catch((e) => console.log(e));
     dispatch(connect());
-  },[]);
+  }, []);
 
-  useEffect(()=>{
-    if(game.isActive){
-      navigate('/game');
+  useEffect(() => {
+    if (game.isActive) {
+      void navigate('/game');
     }
-  },[game]);
+  }, [game]);
 
 
 
@@ -71,18 +76,18 @@ const Lobby = () => {
     dispatch(leaveRoom());
   };
 
-  if (!socket.isConnected || !userId){
-    return(
+  if (!socket.isConnected || !userId) {
+    return (
       <h2 className="animate-pulse">Connecting...</h2>
     );
   }
 
-  const UserList = socket.users.map((user, index) => (
-    <li key={index}>{user}</li>
+  const UserList = socket.users.map((user) => (
+    <li key={user}>{user}</li>
   ));
 
 
-  return(
+  return (
     <div className="flex flex-col p-3">
       <h1 className="py-5 text-2xl">Lobby</h1>
       {userId && <h2>Vieras ID: {userId}</h2>}
@@ -91,30 +96,30 @@ const Lobby = () => {
         <h2> Pelaajat: </h2>
         {UserList}
       </ul>
-      <Button text="Luo peli" onClick={createGame} disabled={socket.roomId!==''} />
+      <Button text="Luo peli" onClick={createGame} disabled={socket.roomId !== ''} />
       <label>
         Give Game ID
       </label>
-      <input 
+      <input
         className="mb-4 rounded bg-emerald-50 px-8 pt-6 pb-8 shadow-md"
         {...inputGameId}
       />
       <div className="flex">
-        <Button 
-          text="Poistu pelistä" 
-          onClick={()=>leaveGame()} 
-          disabled={socket.roomId===''} 
+        <Button
+          text="Poistu pelistä"
+          onClick={() => leaveGame()}
+          disabled={socket.roomId === ''}
         />
-        <Button 
-          text="Liity peliin" 
-          onClick={()=>joinGame()} 
-          disabled={inputGameId.value==='' || socket.roomId!==''} 
+        <Button
+          text="Liity peliin"
+          onClick={() => joinGame()}
+          disabled={inputGameId.value === '' || socket.roomId !== ''}
         />
       </div>
-      <Button 
-        text="Aloita peli" 
-        onClick={()=>dispatch(startGame())} 
-        disabled={socket.users.length<2} 
+      <Button
+        text="Aloita peli"
+        onClick={() => dispatch(startGame())}
+        disabled={socket.users.length < 2}
       />
     </div>
   );

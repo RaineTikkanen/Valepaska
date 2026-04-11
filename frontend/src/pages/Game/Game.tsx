@@ -1,10 +1,7 @@
 import Hand from './Hand';
-import type { Card } from '../../types/game.js';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { playCards} from './handSlice';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Button from '../../components/Button';
-import { leaveRoom } from '../Lobby/socketSlice.js';
 import { leaveGame } from './gameSlice.js';
 import { useNavigate } from 'react-router';
 import User from './User';
@@ -15,21 +12,18 @@ const Game = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const playSelectedCards= () =>{
-    dispatch(playCards());
-  };
 
   const game = useAppSelector((state)=> state.game);
 
   useEffect(()=>{
-    if (!game.isActive) navigate('/lobby');
+    if (!game.isActive) void navigate('/lobby');
   }, []);
 
 
   const onLeaveGame = () => {
     if(window.confirm('Haluatko varmasti poistua pelistä?')){
       dispatch(leaveGame());
-      navigate('/lobby');
+      void navigate('/lobby');
     }
   };
 
@@ -42,9 +36,9 @@ const Game = () => {
         text="Poistu pelistä" 
         onClick={onLeaveGame}
       />
-      <div className='flex flex-row gap-5 justify-center'>
-        <User user="Käyttäjä 1"/>
-        <User user="Käyttäjä 2"/>
+      <div className="flex flex-row justify-center gap-5">
+        <User user="Käyttäjä 1" />
+        <User user="Käyttäjä 2" />
       </div>
       <div className="absolute inset-x-0 bottom-0 flex flex-col">
         <div className="flex justify-center">
