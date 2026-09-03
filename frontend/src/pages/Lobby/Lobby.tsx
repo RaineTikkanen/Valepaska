@@ -6,6 +6,7 @@ import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { connect, createRoom, joinRoom, leaveRoom } from './socketSlice.js';
 import { startGame } from '../Game/gameSlice.js';
 import { isString } from '../../utils/typeGuards.js';
+import { BACKEND_URL } from '../../utils/config.js';
 
 
 
@@ -29,7 +30,7 @@ const Lobby = () => {
 
   const getGuestUserId = async () => {
     try {
-      const response = await fetch('http://localhost:3000/userId');
+      const response = await fetch(BACKEND_URL + '/userId');
 
       //TODO: Handle response
       const result: unknown = await response.json();

@@ -1,8 +1,7 @@
 import { io, Socket } from 'socket.io-client';
-import { WEBSOCKET_PORT } from '../utils/config.js';
+import { WEBSOCKET_URL } from '../utils/config.js';
 import type { Card, GameStateUpdate } from '../types/game.js';
 
-const URL = `http://localhost:${WEBSOCKET_PORT}`;
 
 
 export const SocketEvents = {
@@ -44,11 +43,12 @@ export interface ServerToClientEvents {
   
 }
 
-export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(URL, {
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(WEBSOCKET_URL, {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   timeout: 2000,
   forceNew: false,
+  path: '/ws/socket.io',
 });

@@ -1,0 +1,42 @@
+services:
+  backend:
+    image: valepaska-backend-dev
+    build:
+      context: ./backend
+      dockerfile: dev.Dockerfile
+    volumes:
+      - ./backend:/usr/src/app
+    # ports:
+    #    - 3000:3000
+    #    - 4000:4000
+    environment:
+      - REDIS_URL=redis://redis:6379
+    container_name: valepaska-backend-dev
+  redis:
+    image: redis:8.0
+    command: ['redis-server']
+
+  app:
+    image: valepaska-front-dev
+    build:
+      context: ./frontend
+      dockerfile: dev.Dockerfile 
+    volumes:
+      - ./frontend:/usr/src/app
+    # ports:
+    #   - 5173:5173
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8080/api
+      - VITE_WEBSOCKET_URL=http://localhost:8080/
+    container_name: valepaska-front-dev
+
+  nginx:
+    image: nginx:1.29
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: reverse-proxy
+    depends_on:
+      - app
+      - backend
