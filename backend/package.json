@@ -9,7 +9,7 @@
     "dev": "tsx watch index.ts ",
     "lint": "eslint",
     "start": "node build/index.js",
-    "tsc": "tsc"
+    "tsc": "tsc --skipLibCheck"
   },
   "author": "Raine Tikkanen",
   "license": "ISC",

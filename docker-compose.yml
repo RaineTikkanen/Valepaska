@@ -1,0 +1,30 @@
+services:
+  backend:
+    image: valepaska-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+    container_name: valepaska-backend
+  redis:
+    image: redis:8.0
+    command: ['redis-server']
+
+  app:
+    image: valepaska-front
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile 
+    container_name: valepaska-front
+
+  nginx:
+    image: nginx:1.29
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: reverse-proxy
+    depends_on:
+      - app
+      - backend
