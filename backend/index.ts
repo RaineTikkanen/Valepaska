@@ -80,7 +80,7 @@ io.use(socketLogger);
 io.on('connection', onConnect)
 
 app.get('/health', (_req, res) => {
-  res.send('OK');
+  res.send({ health_status: 'OK' });
 });
 
 app.get('/userId', (_req, res) => {
