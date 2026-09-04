@@ -87,6 +87,7 @@ const gameService = (io: Server, socket: Socket) => {
     callback('OK')
   }
 
+
   const leaveRoom = async (roomId: string, userId: string, callback:(result: string) => void ) => {
     try{
       const parsedRoomId = parseId(roomId);

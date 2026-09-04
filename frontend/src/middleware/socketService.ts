@@ -21,7 +21,7 @@ import {
   gameStarted,
   startGame,
   leaveGame,
-  setIsMyTurn
+  setTurn,
 } from '../pages/Game/gameSlice.js';
 
 import { setCards } from '../pages/Game/handSlice.js';
@@ -58,16 +58,14 @@ socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
 
 socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   if(storeRef){
-    console.log(gameState);
-    const userId = localStorage.getItem('userId');
+    console.log('socketService - GAME_STATE_UPDATE:', gameState);
     const turn = gameState.turn;
-    if(userId===turn)storeRef.dispatch(setIsMyTurn(true));
-    else{storeRef.dispatch(setIsMyTurn(false));}
+    storeRef.dispatch(setTurn(turn || ''));
   }
 });
 
 socket.on(SocketEvents.ERROR, (error)=>{
-  console.log(error);
+  console.log('socketService - ERROR:', error);
 });
 
 const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () => RootState}) => {

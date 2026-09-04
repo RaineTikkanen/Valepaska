@@ -222,10 +222,10 @@ const getGameState = async (roomId: string): Promise<GameState | null>=> {
 
 const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | null> => {
   const gameState = await getGameState(roomId)
+  console.log('gameState from redis:', gameState)
   if (gameState===null) throw new Error('GameState not found') 
 
   const users = gameState.users;
-  console.log(gameState.turnIndex)
   if(gameState.turnIndex===null) throw new Error('GameState.turnIndex not found')
   const turn = users[gameState.turnIndex].id;
 
