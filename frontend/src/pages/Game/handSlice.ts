@@ -28,6 +28,7 @@ export const handSlice = createSlice({
     },
     clearCards: (state) => {
       state.cards = [];
+      state.selectedCards = [];
     },
     playCards: (state) => {
       state.cards = state.cards.filter(
