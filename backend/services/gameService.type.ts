@@ -1,5 +1,5 @@
 export interface Play {
-  player: string;
+  user: string;
   statement: Statement
 }
 

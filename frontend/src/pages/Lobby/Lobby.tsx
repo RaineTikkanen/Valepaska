@@ -7,6 +7,8 @@ import { connect, createRoom, joinRoom, leaveRoom } from './socketSlice.js';
 import { startGame } from '../Game/gameSlice.js';
 import { isString } from '../../utils/typeGuards.js';
 import { BACKEND_URL } from '../../utils/config.js';
+import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+
 
 
 
@@ -19,6 +21,7 @@ const parseUserId = (result: unknown) => {
 
 const Lobby = () => {
   const [userId, setUserId] = useState('');
+  const [copied, setCopied] = useState(false);
   const inputGameId = useField('text', 'Game ID');
   const navigate = useNavigate();
 
@@ -87,20 +90,38 @@ const Lobby = () => {
     <li key={user}>{user}</li>
   ));
 
+  const copyToClipBoard = async () =>{
+    await navigator.clipboard.writeText(socket.roomId);
+    setCopied(true);
+    setTimeout(()=>setCopied(false), 1500);
+  };
+
+
 
   return (
     <div className="flex flex-col p-3">
       <h1 className="py-5 text-2xl">Lobby</h1>
       {userId && <h2>Vieras ID: {userId}</h2>}
-      {socket.roomId && <h2>Olet pelissä: {socket.roomId}</h2>}
+      {socket.roomId && (
+        <div className="flex">
+          <h2>Olet pelissä: {socket.roomId}</h2>
+          <ClipboardDocumentListIcon 
+            onClick={copyToClipBoard}
+            className="size-5 mx-2 hover:cursor-pointer"
+          />
+          {copied&& <p>Kopioitu!</p>}
+        </div>
+      )}
       <ul>
         <h2> Pelaajat: </h2>
         {UserList}
       </ul>
-      <Button text="Luo peli" onClick={createGame} disabled={socket.roomId !== ''} />
-      <label>
-        Give Game ID
-      </label>
+      <Button
+        text="Luo peli"
+        onClick={createGame}
+        disabled={socket.roomId !== ''}
+      />
+      <label>Give Game ID</label>
       <input
         className="mb-4 rounded bg-emerald-50 px-8 pt-6 pb-8 shadow-md"
         {...inputGameId}

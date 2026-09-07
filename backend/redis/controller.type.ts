@@ -12,9 +12,8 @@ export interface Play {
 }
 
 export interface Statement {
-  value: number | null;
-  amount: number | null;
-  isTrue: boolean | null;
+  value: number;
+  amount: number;
 }
 
 export interface GameState {

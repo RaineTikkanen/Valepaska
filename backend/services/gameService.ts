@@ -3,6 +3,9 @@ import { v7 as uuidv7 } from 'uuid';
 import redisController from '../redis/controller.js';
 import { parseId } from '../utils/utils.js';
 import { SocketEvents } from '../index.js';
+import { Statement } from './gameService.type.js';
+import { Play } from '../redis/controller.type.js';
+import { Card } from '../deck/deck.type.js';
 
 const gameService = (io: Server, socket: Socket) => {
 
@@ -109,8 +112,24 @@ const gameService = (io: Server, socket: Socket) => {
     callback('OK')
   }
 
-  const play = (callback: (result: string) => void) => {
-    callback('OK')
+  const play = async (roomId: string, userId: string, cards: Card[], statement: Statement, callback: (result: string) => void) => {
+    try{
+      const parsedRoomId = parseId(roomId);
+      const parsedUserId = parseId(userId);
+
+      const play: Play = {
+        cards: cards,
+        user: parsedUserId,
+        statement: statement,
+      };
+
+      const gameStateUpdate = await redisController.play(parsedRoomId, play);
+      if(!gameStateUpdate)throw new Error('Error updating game state')
+      io.to(parsedRoomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
+      callback('OK')
+    }catch(e){
+      console.log('ERROR: ', e)
+    }
   }
 
   socket.on(SocketEvents.PING, ping);

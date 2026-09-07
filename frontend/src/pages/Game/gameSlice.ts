@@ -24,7 +24,7 @@ export const gameSlice = createSlice({
     gameStarted: (state) => {
       state.isActive = true;
     },
-    leaveGame: () => initialState,
+    resetGame: () => initialState,
     setTurn: (state, action: PayloadAction<string>) => {
       state.turn = action.payload;
     },
@@ -35,7 +35,7 @@ export const gameSlice = createSlice({
 export const {
   startGame,
   gameStarted,
-  leaveGame,
+  resetGame,
   setTurn,
 } = gameSlice.actions;
 

@@ -1,13 +1,15 @@
 import Modal from '../../components/Modal';
-import type { Card, Play } from '../../types/game.js';
+import type { Card, Play, Statement } from '../../types/game.js';
 import Button from '../../components/Button';
 import { useState } from 'react';
-
+import { playCards } from './handSlice.js';
+import { useAppDispatch } from '../../hooks/redux.js';
 
 interface ButtonProps {
-  value: string,
+  text: string,
+  value: number,
   onClick: ()=> void;
-  selectedValue: string | null;
+  selectedValue: number | null;
   disabled?: boolean;
 }
 
@@ -27,7 +29,7 @@ const CardSelectButton = (props: ButtonProps) => {
       onClick={()=>props.onClick()}
       disabled={props.disabled}
     >
-      {props.value}
+      {props.text}
     </button>
   );
 };
@@ -36,23 +38,35 @@ interface PlayCardsModalProps {
   modalOn: boolean, 
   toggleModal: () => void, 
   selectedCards: Card[], 
-  lastPlay: Play | null}
+  lastPlay: Play | null,
+}
 
 const PlayCardsModal = (props: PlayCardsModalProps) => {
   const selectedCardsCount= props.selectedCards.length;
   const lastPlay = props.lastPlay;
 
-  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+  const [selectedValue, setSelectedValue] = useState<number| null>(null);
 
   const labelText = selectedCardsCount > 1 ? `Valitse minä kortteina haluat pelata ${selectedCardsCount} korttia` : 'Valitse minä korttina haluat pelata yhden kortin';
 
   //TODO: Implement the logic for disabling buttons of cards that are not playable based on the selected cards and the last play.
 
   // Disabled conditions:
-  const lastPlayUnder7 = lastPlay === null || lastPlay.statement.value < 7;
-  const lastPlayNotCourt = lastPlay !== null && lastPlay.statement.value <11;
+  const lastPlayUnder7 = lastPlay !== null && lastPlay.statement.value < 7;
+  const lastPlayNotCourt = lastPlay !== null && lastPlay.statement.value < 11;
 
-  
+  const dispatch = useAppDispatch();
+
+  const onPlay = () => {
+    if (selectedValue){
+      const statement: Statement = {
+        amount: selectedCardsCount,
+        value: selectedValue,
+      };
+      dispatch(playCards(statement));
+      props.toggleModal();
+    }
+  };
 
   const onClose = () => {
     setSelectedValue(null);
@@ -65,9 +79,10 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
       <div className="flex flex-col">
         <label>{labelText}</label>
         <div className="flex flex-row justify-center gap-2">
-          {['3', '4', '5', '6', '7'].map((value) => (
+          {[3, 4, 5, 6, 7].map((value) => (
             <CardSelectButton
               key={value}
+              text={value.toString()}
               value={value}
               selectedValue={selectedValue}
               onClick={() => {
@@ -77,9 +92,10 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           ))}
         </div>
         <div className="flex flex-row justify-center gap-2">
-          {['8', '9'].map((value) => (
+          {[8, 9].map((value) => (
             <CardSelectButton
               key={value}
+              text={value.toString()}
               value={value}
               selectedValue={selectedValue}
               onClick={() => {
@@ -88,49 +104,68 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             />
           ))}
 
-          {['J', 'Q', 'K'].map((value) => (
-            <CardSelectButton
-              key={value}
-              value={value}
-              selectedValue={selectedValue}
-              disabled={lastPlayUnder7}
-              onClick={() => {
-                setSelectedValue(value);
-              }}
-            />
-          ))}
+          <CardSelectButton
+            text={'J'}
+            value={11}
+            selectedValue={selectedValue}
+            disabled={lastPlayUnder7}
+            onClick={() => {
+              setSelectedValue(11);
+            }}
+          />
+          <CardSelectButton
+            text={'Q'}
+            value={12}
+            selectedValue={selectedValue}
+            disabled={lastPlayUnder7}
+            onClick={() => {
+              setSelectedValue(11);
+            }}
+          />
+          <CardSelectButton
+            text={'K'}
+            value={13}
+            selectedValue={selectedValue}
+            disabled={lastPlayUnder7}
+            onClick={() => {
+              setSelectedValue(11);
+            }}
+          />
         </div>
         <div className="flex flex-row justify-center gap-2">
           <CardSelectButton
-            value={'10'}
+            text={'10'}
+            value={10}
             disabled={selectedCardsCount > 1}
             selectedValue={selectedValue}
             onClick={() => {
-              setSelectedValue('10');
+              setSelectedValue(10);
             }}
           />
           <CardSelectButton
-            value={'A'}
+            text={'A'}
+            value={1}
             disabled={selectedCardsCount > 1 || lastPlayNotCourt}
             selectedValue={selectedValue}
             onClick={() => {
-              setSelectedValue('A');
+              setSelectedValue(1);
             }}
           />
           <CardSelectButton
-            value={'2'}
+            text={'2'}
+            value={2}
             disabled={selectedCardsCount > 1}
             selectedValue={selectedValue}
             onClick={() => {
-              setSelectedValue('2');
+              setSelectedValue(2);
             }}
           />
         </div>
-        <Button text="Pelaa" 
-          disabled={selectedValue===null}
+        <Button
+          text="Pelaa"
+          disabled={selectedValue === null}
           onClick={() => {
-            console.log('Pelaa kortit');
-            onClose();
+            onPlay();
           }}
         />
       </div>

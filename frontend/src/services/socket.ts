@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { WEBSOCKET_URL } from '../utils/config.js';
-import type { Card, GameStateUpdate } from '../types/game.js';
+import type { Card, GameStateUpdate, Statement } from '../types/game.js';
 
 
 
@@ -31,6 +31,7 @@ export interface ClientToServerEvents {
   joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
   startGame: (roomId: string, callback: (result: string) => void) => void; 
   leaveRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
+  play: (roomId: string, userId: string, cards: Card[], statement: Statement, callback: (result: string)=> void)=>void;
 }
 
 

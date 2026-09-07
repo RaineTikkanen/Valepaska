@@ -2,7 +2,7 @@ import Hand from './Hand';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
-import { leaveGame } from './gameSlice.js';
+import { leaveRoom } from '../Lobby/socketSlice.js';
 import { useNavigate } from 'react-router';
 import PlayCardsModal from './PlayCardsModal';
 
@@ -65,7 +65,7 @@ const Game = () => {
 
   const onLeaveGame = () => {
     if(window.confirm('Haluatko varmasti poistua pelistä?')){
-      dispatch(leaveGame());
+      dispatch(leaveRoom());
       void navigate('/lobby');
     }
   };

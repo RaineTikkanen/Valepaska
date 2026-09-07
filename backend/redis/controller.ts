@@ -3,6 +3,7 @@ import { REDIS_URL } from '../utils/config.js'
 import getShuffledDeck from '../deck/deck.js'
 import { Card } from '../deck/deck.type.js';
 import { Play, User, GameState } from './controller.type.js';
+import { Play as servicePlay} from '../services/gameService.type.js';
 import { GameStateUpdate } from '../services/gameService.type.js';
 import { getRandomInt } from '../utils/utils.js';
 
@@ -39,7 +40,6 @@ const createRoom = async (roomId: string ) => {
         statement: {
           value: null,
           amount: null,
-          isTrue: null,
         },
       },
     })
@@ -71,21 +71,54 @@ const addUserToGame = async (roomId: string, userId: string) => {
   )
 }
 
+const setTurnIndex = async (roomId: string, index: number) => {
+  await client.json.set(
+    roomId,
+    '$.turnIndex',
+    index
+  )
+}
 
 
-const play = async (key: string, play: Play) => {
-  const result = await client.json.set( 
-    key, 
-    '$.gameState', 
+const nextTurn = async (roomId: string) => {
+
+  const turnIndex = await client.json.get(
+    roomId, 
+    {path: '.turnIndex'}
+  ) as number
+
+  const users = await getUsersInAGame(roomId)
+
+  if(!users) throw new Error('Users not found')
+  if(turnIndex===null) throw new Error('TurnIndex not found')
+
+  if(users.length-1 === turnIndex){
+    await setTurnIndex(roomId, 0)
+  }else{
+    await setTurnIndex(roomId, turnIndex+1)
+
+  }
+}
+
+
+const play = async (roomId: string, play: Play): Promise<GameStateUpdate | null> => {
+
+  await client.json.set( 
+    roomId, 
+    '$.lastPlay', 
     {
       cards: play.cards, 
+      user: play.user,
       statement: {
         value: play.statement.value,
         amount: play.statement.amount
       }
     }
   );
-  return result
+  await nextTurn(roomId);
+
+  return getGameStateUpdate(roomId)
+  
 }
 
 
@@ -195,6 +228,7 @@ const initiateGame = async (roomId: string) => {
   }
 
   const starterIndex = getRandomInt(users.length);
+
   await client.json.set(
     roomId,
     '$.turnIndex',
@@ -222,17 +256,28 @@ const getGameState = async (roomId: string): Promise<GameState | null>=> {
 
 const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | null> => {
   const gameState = await getGameState(roomId)
-  console.log('gameState from redis:', gameState)
+
+  
   if (gameState===null) throw new Error('GameState not found') 
 
   const users = gameState.users;
   if(gameState.turnIndex===null) throw new Error('GameState.turnIndex not found')
+
   const turn = users[gameState.turnIndex].id;
 
-  return {
-    turn: turn,
-    lastPlay: null,
+  if(gameState.lastPlay && gameState.lastPlay.statement){
+    const lastPlay: servicePlay= {
+      statement: gameState.lastPlay.statement,
+      user: gameState.lastPlay.user
+
+    }
+
+    return {
+      turn: turn,
+      lastPlay: lastPlay,
+    }
   }
+  return null
 }
 
 export default{

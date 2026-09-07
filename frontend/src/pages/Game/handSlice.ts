@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
-import type { Card } from '../../types/game.js';
+import type { Card, Statement } from '../../types/game.js';
 
 export interface HandState {
   cards: Array<Card>;
@@ -30,7 +30,7 @@ export const handSlice = createSlice({
       state.cards = [];
       state.selectedCards = [];
     },
-    playCards: (state) => {
+    playCards: (state, action: PayloadAction<Statement>) => {
       state.cards = state.cards.filter(
         (card) => !state.selectedCards.some((c) => c.name === card.name),
       );

@@ -3,8 +3,9 @@ import type { PayloadAction } from '@reduxjs/toolkit';
 import type { AppDispatch, RootState } from '../store.js';
 import { isAction } from '@reduxjs/toolkit';
 import { socket } from '../services/socket.js';
-import {isString} from '../utils/typeGuards.js';
-import type { Card, GameStateUpdate } from '../types/game.js';
+import { isStatement, isString } from '../utils/typeGuards.js';
+import type { Card, GameStateUpdate, Statement } from '../types/game.js';
+
 import { 
   connect, 
   disconnect, 
@@ -20,11 +21,11 @@ import {
 import {
   gameStarted,
   startGame,
-  leaveGame,
   setTurn,
+  resetGame,
 } from '../pages/Game/gameSlice.js';
 
-import { setCards } from '../pages/Game/handSlice.js';
+import { playCards, setCards } from '../pages/Game/handSlice.js';
 
 import { SocketEvents } from '../services/socket.js';
 
@@ -48,7 +49,6 @@ socket.on(SocketEvents.ROOM_UPDATE, (roomId: string, users: string[]) => {
 });
 
 socket.on(SocketEvents.GAME_STARTS, ()=>{
-  console.log('GAME IS INDEED STARTING');
   if (storeRef) storeRef.dispatch(gameStarted());
 });
 
@@ -60,7 +60,7 @@ socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   if(storeRef){
     console.log('socketService - GAME_STATE_UPDATE:', gameState);
     const turn = gameState.turn;
-    storeRef.dispatch(setTurn(turn || ''));
+    storeRef.dispatch(setTurn(turn));
   }
 });
 
@@ -109,7 +109,6 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
           }
           if (userId){
             socket.emit(SocketEvents.JOIN_ROOM, payload, userId, (result) => {
-              console.log(result);
               if (result == 'ERR') {
                 window.alert('Failed to join room. Please check the game ID and try again.');
               }
@@ -119,14 +118,14 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
         }
 
         case leaveRoom.type: {
+
           const userId = localStorage.getItem('userId');
-
-
           const roomId = store.getState().socket.roomId;
 
 
           if (userId && roomId && isString(roomId)){
             socket.emit(SocketEvents.LEAVE_ROOM, roomId, userId, (result)=>{
+              store.dispatch(resetGame());
               if (result === 'ERR') {
                 window.alert('Failed to leave room');
               }
@@ -147,8 +146,26 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
           break;
         }
 
-        case leaveGame.type: {
-          store.dispatch(leaveRoom());
+        case playCards.type: {
+          const userId = localStorage.getItem('userId');
+          const roomId = store.getState().socket.roomId;
+
+          if (!isStatement(payload)) {
+            window.alert('Invalid statement');
+            break;
+          }
+
+          const statement = payload;
+
+          const cards = store.getState().hand.selectedCards;
+          console.log('Middleware: [PLAY CARDS], cards: ',cards, 'Statement: ', statement);
+          if(userId){
+
+            socket.emit(SocketEvents.PLAY, roomId, userId, cards, statement, (result)=>{
+              console.log(result);
+            });
+          }
+          break;  
         }
       }
     }
