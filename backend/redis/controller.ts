@@ -100,6 +100,13 @@ const nextTurn = async (roomId: string) => {
   }
 }
 
+const getPlayDeck = async (roomId: string): Promise<Card[]> => {
+  return await client.json.get(
+    roomId,
+    {path: '.playDeck'}
+  ) as Card[];
+}
+
 
 const play = async (roomId: string, play: Play): Promise<GameStateUpdate | null> => {
 
@@ -115,6 +122,18 @@ const play = async (roomId: string, play: Play): Promise<GameStateUpdate | null>
       }
     }
   );
+
+  for (const card of play.cards) {
+    await client.json.arrAppend(
+      roomId,
+      '$.playDeck',
+      card
+    );
+  }
+  const playDeck = await getPlayDeck(roomId);
+
+  console.log('Playdeck: ', playDeck);
+
   await nextTurn(roomId);
 
   return getGameStateUpdate(roomId)
@@ -272,9 +291,13 @@ const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | n
 
     }
 
+    const playDeck = await getPlayDeck(roomId);
+
+    console.log(playDeck.length)
     return {
       turn: turn,
       lastPlay: lastPlay,
+      amountOfCardsInPlay: playDeck.length
     }
   }
   return null

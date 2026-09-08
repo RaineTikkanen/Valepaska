@@ -8,19 +8,19 @@ export interface User {
 export interface Play {
   cards: Card[];
   user: string;
-  statement: Statement
+  statement: Statement;
 }
 
 export interface Statement {
-  value: number;
-  amount: number;
+  value: number | null;
+  amount: number | null;
 }
 
 export interface GameState {
   isActive: boolean;
-  turnIndex: number | null;
+  turnIndex: number;
   deck: Card[];
   playDeck: Card[];
   users: User[];
-  lastPlay: Play | null;
+  lastPlay: Play;
 }

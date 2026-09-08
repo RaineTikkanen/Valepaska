@@ -106,8 +106,8 @@ const Lobby = () => {
         <div className="flex">
           <h2>Olet pelissä: {socket.roomId}</h2>
           <ClipboardDocumentListIcon 
-            onClick={copyToClipBoard}
-            className="size-5 mx-2 hover:cursor-pointer"
+            onClick={() => { void copyToClipBoard(); }}
+            className="mx-2 size-5 hover:cursor-pointer"
           />
           {copied&& <p>Kopioitu!</p>}
         </div>

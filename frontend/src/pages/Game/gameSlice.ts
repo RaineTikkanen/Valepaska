@@ -5,13 +5,21 @@ import type { Play } from '../../types/game.js';
 export interface GameState {
   isActive: boolean;
   turn: string;
-  lastPlay: Play | null;
+  lastPlay: Play;
+  amountOfCardsInPlay: number;
 }
 
 const initialState: GameState = {
   isActive: false,
   turn: '',
-  lastPlay: null,
+  lastPlay: {
+    player: '',
+    statement:{
+      value: null,
+      amount: null,
+    }
+  },
+  amountOfCardsInPlay: 0,
 };
 
 export const gameSlice = createSlice({
@@ -28,6 +36,12 @@ export const gameSlice = createSlice({
     setTurn: (state, action: PayloadAction<string>) => {
       state.turn = action.payload;
     },
+    setLastPlay: (state, action: PayloadAction<Play>) =>{
+      state.lastPlay = action.payload;
+    },
+    setAmountOfCardsInPlay: (state, action: PayloadAction<number>)=>{
+      state.amountOfCardsInPlay = action.payload;
+    }
   }
 });
 
@@ -37,6 +51,8 @@ export const {
   gameStarted,
   resetGame,
   setTurn,
+  setLastPlay,
+  setAmountOfCardsInPlay,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

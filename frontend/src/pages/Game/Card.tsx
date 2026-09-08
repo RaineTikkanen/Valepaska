@@ -22,16 +22,17 @@ function CardComponent({ card }: { card: Card }) {
     dispatch(toggleCardSelectState(card));
     setIsSelected(!isSelected);
   };
+  const cardName = card.name;
 
 
   return (
     <div
-      key={card.name} 
+      key={cardName} 
       className={` max-w-35 min-w-35 transition-all ${isSelected ? '-mt-6' : ''}`}
       onClick={() => onClick(card)}
     >
       <img
-        src={cardImages[card.name]}
+        src={cardImages[cardName]}
         alt="Card Image"
         className="shadow-md"
       />

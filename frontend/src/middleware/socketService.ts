@@ -4,7 +4,7 @@ import type { AppDispatch, RootState } from '../store.js';
 import { isAction } from '@reduxjs/toolkit';
 import { socket } from '../services/socket.js';
 import { isStatement, isString } from '../utils/typeGuards.js';
-import type { Card, GameStateUpdate, Statement } from '../types/game.js';
+import type { Card, GameStateUpdate } from '../types/game.js';
 
 import { 
   connect, 
@@ -23,6 +23,8 @@ import {
   startGame,
   setTurn,
   resetGame,
+  setLastPlay,
+  setAmountOfCardsInPlay,
 } from '../pages/Game/gameSlice.js';
 
 import { playCards, setCards } from '../pages/Game/handSlice.js';
@@ -59,8 +61,9 @@ socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
 socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   if(storeRef){
     console.log('socketService - GAME_STATE_UPDATE:', gameState);
-    const turn = gameState.turn;
-    storeRef.dispatch(setTurn(turn));
+    storeRef.dispatch(setTurn(gameState.turn));
+    storeRef.dispatch(setLastPlay(gameState.lastPlay));
+    storeRef.dispatch(setAmountOfCardsInPlay(gameState.amountOfCardsInPlay));
   }
 });
 

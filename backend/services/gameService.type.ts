@@ -4,11 +4,12 @@ export interface Play {
 }
 
 export interface Statement {
-  value: number;
-  amount: number;
+  value: number | null;
+  amount: number | null;
 }
 
 export interface GameStateUpdate {
-  turn: string | null;
-  lastPlay: Play | null;
+  turn: string;
+  lastPlay: Play;
+  amountOfCardsInPlay: number | null;
 }

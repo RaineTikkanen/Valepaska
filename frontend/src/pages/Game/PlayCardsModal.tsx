@@ -4,9 +4,9 @@ import Button from '../../components/Button';
 import { useState } from 'react';
 import { playCards } from './handSlice.js';
 import { useAppDispatch } from '../../hooks/redux.js';
+import { cardValueToString } from '../../utils/utils.js';
 
 interface ButtonProps {
-  text: string,
   value: number,
   onClick: ()=> void;
   selectedValue: number | null;
@@ -29,7 +29,7 @@ const CardSelectButton = (props: ButtonProps) => {
       onClick={()=>props.onClick()}
       disabled={props.disabled}
     >
-      {props.text}
+      {cardValueToString(props.value)}
     </button>
   );
 };
@@ -38,7 +38,7 @@ interface PlayCardsModalProps {
   modalOn: boolean, 
   toggleModal: () => void, 
   selectedCards: Card[], 
-  lastPlay: Play | null,
+  lastPlay: Play,
 }
 
 const PlayCardsModal = (props: PlayCardsModalProps) => {
@@ -52,8 +52,11 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
   //TODO: Implement the logic for disabling buttons of cards that are not playable based on the selected cards and the last play.
 
   // Disabled conditions:
-  const lastPlayUnder7 = lastPlay !== null && lastPlay.statement.value < 7;
-  const lastPlayNotCourt = lastPlay !== null && lastPlay.statement.value < 11;
+  const cantPlayCourt = lastPlay.statement.value !== null && lastPlay.statement.value < 7;
+  const cantPlayAce = lastPlay.statement.value !== null && lastPlay.statement.value < 11;
+  const cantPlay10 = lastPlay.statement.value !== null && lastPlay.statement.value >10;
+  const cantPlayNonCourt = lastPlay.statement.value !== null && lastPlay.statement.value >10;
+  const lastPlayIs2 = lastPlay.statement.value !== null && lastPlay.statement.value === 2;
 
   const dispatch = useAppDispatch();
 
@@ -82,8 +85,8 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           {[3, 4, 5, 6, 7].map((value) => (
             <CardSelectButton
               key={value}
-              text={value.toString()}
               value={value}
+              disabled={cantPlayNonCourt || lastPlayIs2}
               selectedValue={selectedValue}
               onClick={() => {
                 setSelectedValue(value);
@@ -92,11 +95,11 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           ))}
         </div>
         <div className="flex flex-row justify-center gap-2">
-          {[8, 9].map((value) => (
+          {[8, 9 ].map((value) => (
             <CardSelectButton
               key={value}
-              text={value.toString()}
               value={value}
+              disabled={cantPlayNonCourt || lastPlayIs2}
               selectedValue={selectedValue}
               onClick={() => {
                 setSelectedValue(value);
@@ -104,55 +107,37 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             />
           ))}
 
-          <CardSelectButton
-            text={'J'}
-            value={11}
-            selectedValue={selectedValue}
-            disabled={lastPlayUnder7}
-            onClick={() => {
-              setSelectedValue(11);
-            }}
-          />
-          <CardSelectButton
-            text={'Q'}
-            value={12}
-            selectedValue={selectedValue}
-            disabled={lastPlayUnder7}
-            onClick={() => {
-              setSelectedValue(11);
-            }}
-          />
-          <CardSelectButton
-            text={'K'}
-            value={13}
-            selectedValue={selectedValue}
-            disabled={lastPlayUnder7}
-            onClick={() => {
-              setSelectedValue(11);
-            }}
-          />
+          {[11, 12, 13].map((value) => (
+            <CardSelectButton
+              key={value}
+              value={value}
+              selectedValue={selectedValue}
+              onClick={() => {
+                setSelectedValue(value);
+              }}
+              disabled={cantPlayCourt || lastPlayIs2}
+            />
+          ))}
+
         </div>
         <div className="flex flex-row justify-center gap-2">
           <CardSelectButton
-            text={'10'}
             value={10}
-            disabled={selectedCardsCount > 1}
+            disabled={selectedCardsCount > 1 || cantPlay10 || lastPlayIs2}
             selectedValue={selectedValue}
             onClick={() => {
               setSelectedValue(10);
             }}
           />
           <CardSelectButton
-            text={'A'}
             value={1}
-            disabled={selectedCardsCount > 1 || lastPlayNotCourt}
+            disabled={selectedCardsCount > 1 || cantPlayAce || lastPlayIs2}
             selectedValue={selectedValue}
             onClick={() => {
               setSelectedValue(1);
             }}
           />
           <CardSelectButton
-            text={'2'}
             value={2}
             disabled={selectedCardsCount > 1}
             selectedValue={selectedValue}

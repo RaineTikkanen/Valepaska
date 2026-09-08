@@ -30,7 +30,7 @@ export const handSlice = createSlice({
       state.cards = [];
       state.selectedCards = [];
     },
-    playCards: (state, action: PayloadAction<Statement>) => {
+    playCards: (state, _action: PayloadAction<Statement>) => {
       state.cards = state.cards.filter(
         (card) => !state.selectedCards.some((c) => c.name === card.name),
       );
