@@ -68,6 +68,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
       };
       dispatch(playCards(statement));
       props.toggleModal();
+      setSelectedValue(null);
     }
   };
 

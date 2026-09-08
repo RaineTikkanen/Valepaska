@@ -47,8 +47,6 @@ const LastPlayView = ({ lastPlay, amountOfCardsInPlay }: { lastPlay: Play, amoun
 
   const amount = lastPlay.statement.amount;
 
-  console.log("amountOfCardsInPlay: ", amountOfCardsInPlay);
-
   return (
     <div>
       
@@ -76,7 +74,6 @@ const LastPlayView = ({ lastPlay, amountOfCardsInPlay }: { lastPlay: Play, amoun
 const Game = () => {
   const game = useAppSelector((state)=> state.game);
   const hand = useAppSelector((state) => state.hand);
-  console.log('hand:', hand);
 
   const turn = game.turn;
 
@@ -105,7 +102,6 @@ const Game = () => {
     }
   };
 
-  console.log('last play:', game.lastPlay?.statement);
 
   return (
     <div className="">

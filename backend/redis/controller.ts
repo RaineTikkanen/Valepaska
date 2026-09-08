@@ -107,8 +107,41 @@ const getPlayDeck = async (roomId: string): Promise<Card[]> => {
   ) as Card[];
 }
 
+const removePlayedCardsFromUserHand = async (roomId: string, userId: string, playedCards: Card[]) => {
+  const userIndex = await getUserIndexInAGame(roomId, userId)
 
-const play = async (roomId: string, play: Play): Promise<GameStateUpdate | null> => {
+  if (userIndex === null || userIndex < 0) return
+
+  const hand = await client.json.get(
+    roomId,
+    {path: `$.users[${userIndex}].hand`}
+  ) as Card[][] | null
+
+  if (!hand) return
+
+  const remainingHand = [...hand[0]]
+
+  for (const playedCard of playedCards) {
+    const cardIndex = remainingHand.findIndex(
+      card => JSON.stringify(card) === JSON.stringify(playedCard)
+    )
+
+    if (cardIndex !== -1) remainingHand.splice(cardIndex, 1)
+  }
+
+  await client.json.set(
+    roomId,
+    `$.users[${userIndex}].hand`,
+    remainingHand
+  )
+}
+
+
+const play = async (roomId: string, play: Play) => {
+
+  if (play.statement.amount === null) return;
+
+  await removePlayedCardsFromUserHand(roomId, play.user, play.cards)
 
   await client.json.set( 
     roomId, 
@@ -123,6 +156,8 @@ const play = async (roomId: string, play: Play): Promise<GameStateUpdate | null>
     }
   );
 
+  
+
   for (const card of play.cards) {
     await client.json.arrAppend(
       roomId,
@@ -130,14 +165,10 @@ const play = async (roomId: string, play: Play): Promise<GameStateUpdate | null>
       card
     );
   }
-  const playDeck = await getPlayDeck(roomId);
 
-  console.log('Playdeck: ', playDeck);
+  await dealCardsToUserById(roomId, play.user, play.statement.amount)
 
   await nextTurn(roomId);
-
-  return getGameStateUpdate(roomId)
-  
 }
 
 
@@ -169,6 +200,27 @@ const getUserIndexInAGame = async (roomId: string, userId: string): Promise<numb
   return users.findIndex(p => p.id === userId); 
 }
 
+/**
+ * Returns a user's hand in a game
+ * @param roomId
+ * @param userId
+ * @returns
+ */
+const getUserHand = async (roomId: string, userId: string): Promise<Card[] | null> => {
+  const index = await getUserIndexInAGame(roomId, userId)
+
+  if (index === null) return null
+
+  const hand = await client.json.get(
+    roomId,
+    { path: `$.users[${index}].hand` }
+  ) as Card[][] | null
+
+
+  console.log('REDIS CONTROLLER: hand: ', hand);
+
+  return hand?.[0] ?? null;
+}
 
 
 /**
@@ -178,11 +230,21 @@ const getUserIndexInAGame = async (roomId: string, userId: string): Promise<numb
  * @param cards cards to add to hand
  */
 const appendUserHandByIndex = async (roomId: string, index: number, cards: Card[]) => {
-  await client.json.arrAppend(
-    roomId,
-    `$.users[${index}].hand`,
-    cards
-  )
+
+  console.log('[appendUserHandByIndex] user: ', index)
+
+  for (const card of cards) {
+    console.log('[appendUserHandByIndex] card: ', card)
+    await client.json.arrAppend(
+      roomId,
+      `$.users[${index}].hand`,
+      card
+    )
+  }
+
+  console.log('[appendUserHandByIndex] user: ', index)
+
+
 }
 
 
@@ -273,6 +335,8 @@ const getGameState = async (roomId: string): Promise<GameState | null>=> {
   return await client.json.get(roomId) as GameState | null;
 }
 
+
+
 const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | null> => {
   const gameState = await getGameState(roomId)
 
@@ -312,6 +376,7 @@ export default{
   initiateGame,
   dealCardsToUserById,
   getUsersInAGame,
+  getUserHand,
   getGameStateUpdate,
   removeUserFromGame,
 }

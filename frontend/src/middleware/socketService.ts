@@ -55,6 +55,7 @@ socket.on(SocketEvents.GAME_STARTS, ()=>{
 });
 
 socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
+  console.log('MIDDLEWARE: ', cards);
   if (storeRef) storeRef.dispatch(setCards(cards));
 });
 

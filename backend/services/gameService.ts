@@ -63,6 +63,8 @@ const gameService = (io: Server, socket: Socket) => {
   }
 
   const startGame = async (roomId: string, callback: (result:string) => void) => {
+    console.group()
+    console.log('START GAME')
     try{
       const parsedRoomId=parseId(roomId)
       
@@ -75,7 +77,7 @@ const gameService = (io: Server, socket: Socket) => {
       io.to(parsedRoomId).emit(SocketEvents.GAME_STARTS);
 
       for(const user of users){ 
-        const hand = user.hand[0];
+        const hand = user.hand;
         io.to(user.id).emit(SocketEvents.HAND_UPDATE, hand)
       }
 
@@ -88,6 +90,7 @@ const gameService = (io: Server, socket: Socket) => {
       callback('ERR')
     }
     callback('OK')
+    console.groupEnd()
   }
 
 
@@ -113,6 +116,9 @@ const gameService = (io: Server, socket: Socket) => {
   }
 
   const play = async (roomId: string, userId: string, cards: Card[], statement: Statement, callback: (result: string) => void) => {
+    console.group()
+    console.log('PLAY')
+
     try{
       const parsedRoomId = parseId(roomId);
       const parsedUserId = parseId(userId);
@@ -123,13 +129,20 @@ const gameService = (io: Server, socket: Socket) => {
         statement: statement,
       };
 
-      const gameStateUpdate = await redisController.play(parsedRoomId, play);
+      await redisController.play(parsedRoomId, play);
+
+      const userHand = await redisController.getUserHand(roomId, userId);
+      io.to(userId).emit(SocketEvents.HAND_UPDATE, userHand)
+
+      const gameStateUpdate = await redisController.getGameStateUpdate(roomId);
+
       if(!gameStateUpdate)throw new Error('Error updating game state')
       io.to(parsedRoomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
       callback('OK')
     }catch(e){
       console.log('ERROR: ', e)
     }
+    console.groupEnd()
   }
 
   socket.on(SocketEvents.PING, ping);
