@@ -50,6 +50,7 @@ export const handSlice = createSlice({
     clearSelectedCards: (state) => {
       state.selectedCards = [];
     },
+    doubt: () =>{},
   },
 });
 
@@ -59,7 +60,8 @@ export const {
   clearCards,
   playCards,
   toggleCardSelectState,
-  clearSelectedCards
+  clearSelectedCards,
+  doubt
 } = handSlice.actions;
 
 export const selectHandCards = (state: RootState) => state.hand.cards;

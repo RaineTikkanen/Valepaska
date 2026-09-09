@@ -11,6 +11,7 @@ interface ButtonProps {
   onClick: ()=> void;
   selectedValue: number | null;
   disabled?: boolean;
+  lastPlayValue: number | null;
 }
 
 const CardSelectButton = (props: ButtonProps) => {
@@ -19,15 +20,17 @@ const CardSelectButton = (props: ButtonProps) => {
   const defaultClass = baseClass.concat('bg-emerald-400 hover:bg-green-400 hover:cursor-pointer');
   const disabledClassName=baseClass.concat('bg-emerald-400/50 cursor-not-allowed');
 
-  
+  const valueSmallerThanLastPlay = props.lastPlayValue !== null && props.lastPlayValue > props.value && !(props.value in [10, 1, 2]);
+
+  const disabled = props.disabled || valueSmallerThanLastPlay;
 
   const selected = props.selectedValue === props.value;
 
   return (
     <button 
-      className={props.disabled ? disabledClassName : selected ? selectedClass : defaultClass}
+      className={disabled ? disabledClassName : selected ? selectedClass : defaultClass}
       onClick={()=>props.onClick()}
-      disabled={props.disabled}
+      disabled={disabled}
     >
       {cardValueToString(props.value)}
     </button>
@@ -89,6 +92,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
               value={value}
               disabled={cantPlayNonCourt || lastPlayIs2}
               selectedValue={selectedValue}
+              lastPlayValue={lastPlay.statement.value}
               onClick={() => {
                 setSelectedValue(value);
               }}
@@ -102,6 +106,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
               value={value}
               disabled={cantPlayNonCourt || lastPlayIs2}
               selectedValue={selectedValue}
+              lastPlayValue={lastPlay.statement.value}
               onClick={() => {
                 setSelectedValue(value);
               }}
@@ -113,6 +118,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
               key={value}
               value={value}
               selectedValue={selectedValue}
+              lastPlayValue={lastPlay.statement.value}
               onClick={() => {
                 setSelectedValue(value);
               }}
@@ -126,6 +132,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             value={10}
             disabled={selectedCardsCount > 1 || cantPlay10 || lastPlayIs2}
             selectedValue={selectedValue}
+            lastPlayValue={lastPlay.statement.value}
             onClick={() => {
               setSelectedValue(10);
             }}
@@ -134,6 +141,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             value={1}
             disabled={selectedCardsCount > 1 || cantPlayAce || lastPlayIs2}
             selectedValue={selectedValue}
+            lastPlayValue={lastPlay.statement.value}
             onClick={() => {
               setSelectedValue(1);
             }}
@@ -142,6 +150,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             value={2}
             disabled={selectedCardsCount > 1}
             selectedValue={selectedValue}
+            lastPlayValue={lastPlay.statement.value}
             onClick={() => {
               setSelectedValue(2);
             }}

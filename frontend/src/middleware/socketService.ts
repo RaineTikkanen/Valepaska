@@ -4,7 +4,7 @@ import type { AppDispatch, RootState } from '../store.js';
 import { isAction } from '@reduxjs/toolkit';
 import { socket } from '../services/socket.js';
 import { isStatement, isString } from '../utils/typeGuards.js';
-import type { Card, GameStateUpdate } from '../types/game.js';
+import type { Card, GameStateUpdate} from '../types/game.js';
 
 import { 
   connect, 
@@ -25,9 +25,13 @@ import {
   resetGame,
   setLastPlay,
   setAmountOfCardsInPlay,
+  setDoubter,
+  clearDoubter,
+  setDoubtResult,
+  clearDoubtResult,
 } from '../pages/Game/gameSlice.js';
 
-import { playCards, setCards } from '../pages/Game/handSlice.js';
+import { playCards, setCards, doubt } from '../pages/Game/handSlice.js';
 
 import { SocketEvents } from '../services/socket.js';
 
@@ -61,12 +65,35 @@ socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
 
 socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   if(storeRef){
-    console.log('socketService - GAME_STATE_UPDATE:', gameState);
-    storeRef.dispatch(setTurn(gameState.turn));
     storeRef.dispatch(setLastPlay(gameState.lastPlay));
     storeRef.dispatch(setAmountOfCardsInPlay(gameState.amountOfCardsInPlay));
   }
 });
+
+socket.on(SocketEvents.TURN_UPDATE, (turn: string)=>{
+  if(storeRef){
+    storeRef.dispatch(setTurn(turn));
+
+  }
+});
+
+socket.on(SocketEvents.DOUBTED, (doubter: string)=>{
+  if(storeRef){
+    storeRef.dispatch(setDoubter(doubter))
+  }
+})
+
+socket.on(SocketEvents.DOUBT_RESULT, (cards: Card[])=>{
+  const store = storeRef;
+  if(store){
+    store.dispatch(clearDoubter());
+    store.dispatch(setDoubtResult(cards))
+
+    setTimeout(()=>{
+      store.dispatch(clearDoubtResult())
+    },3000)
+  }
+})
 
 socket.on(SocketEvents.ERROR, (error)=>{
   console.log('socketService - ERROR:', error);
@@ -170,6 +197,19 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
             });
           }
           break;  
+        }
+
+        case doubt.type: {
+          const userId = localStorage.getItem('userId');
+          const roomId = store.getState().socket.roomId;
+
+          if(userId){
+            socket.emit(SocketEvents.DOUBT, roomId, userId, (result)=>{
+              if(result === 'ERR'){
+                console.log('Failed to doubt')
+              }
+            })
+          }
         }
       }
     }

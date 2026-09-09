@@ -29,4 +29,5 @@ type Statement = {
   amount: number | null,
 };
 
-export type { Card, GameStateUpdate, Play, Statement };
+
+export type { Card, GameStateUpdate, Play, Statement};

@@ -13,3 +13,4 @@ export const parseId = (id: unknown): string => {
 export const getRandomInt = (max:number): number => {
   return Math.floor(Math.random() * max);
 }
+

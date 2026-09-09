@@ -15,6 +15,9 @@ export const SocketEvents = {
   GAME_STARTS: 'gameStarts',
   GAME_STATE_UPDATE: 'gameStateUpdate',
   HAND_UPDATE: 'handUpdate',
+  TURN_UPDATE: 'turnUpdate',
+  DOUBTED: 'doubted',
+  DOUBT_RESULT: 'doubtResult',
 
   //ClientToServer
   CREATE_ROOM: 'createRoom',
@@ -32,6 +35,7 @@ export interface ClientToServerEvents {
   startGame: (roomId: string, callback: (result: string) => void) => void; 
   leaveRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
   play: (roomId: string, userId: string, cards: Card[], statement: Statement, callback: (result: string)=> void)=>void;
+  doubt: (roomId: string, userId: string, callback: (result: string)=>void)=>void;
 }
 
 
@@ -40,7 +44,10 @@ export interface ServerToClientEvents {
   gameStarts: () => void; 
   roomUpdate: (roomId: string, players: string[]) => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
+  turnUpdate:(turn: string)=>void;
   handUpdate: (cards: Card[]) => void;
+  doubted: (userId: string) => void;
+  doubtResult: (cards: Card[]) => void;
   
 }
 

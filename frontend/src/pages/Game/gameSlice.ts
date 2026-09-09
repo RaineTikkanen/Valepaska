@@ -1,12 +1,14 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { Play } from '../../types/game.js';
+import type { Play, Card} from '../../types/game.js';
 
 export interface GameState {
   isActive: boolean;
   turn: string;
   lastPlay: Play;
   amountOfCardsInPlay: number;
+  doubter: string;
+  doubtResult: Card[] | null;
 }
 
 const initialState: GameState = {
@@ -19,7 +21,9 @@ const initialState: GameState = {
       amount: null,
     }
   },
+  doubter: '',
   amountOfCardsInPlay: 0,
+  doubtResult: null,
 };
 
 export const gameSlice = createSlice({
@@ -41,7 +45,19 @@ export const gameSlice = createSlice({
     },
     setAmountOfCardsInPlay: (state, action: PayloadAction<number>)=>{
       state.amountOfCardsInPlay = action.payload;
-    }
+    },
+    setDoubter: (state, action: PayloadAction<string>) =>{
+      state.doubter = action.payload;
+    },
+    clearDoubter: (state)=>{
+      state.doubter = '';
+    },
+    setDoubtResult: (state, action: PayloadAction<Card[]>) =>{
+      state.doubtResult = action.payload;
+    },
+    clearDoubtResult: (state) =>{
+      state.doubtResult=null;
+    },
   }
 });
 
@@ -53,6 +69,10 @@ export const {
   setTurn,
   setLastPlay,
   setAmountOfCardsInPlay,
+  setDoubter,
+  clearDoubter,
+  setDoubtResult,
+  clearDoubtResult
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

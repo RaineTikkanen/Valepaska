@@ -18,7 +18,10 @@ export const SocketEvents = {
   ROOM_UPDATE: 'roomUpdate',
   GAME_STARTS: 'gameStarts',
   GAME_STATE_UPDATE: 'gameStateUpdate',
+  TURN_UPDATE: 'turnUpdate',
   HAND_UPDATE: 'handUpdate',
+  DOUBTED: 'doubted',
+  DOUBT_RESULT: 'doubtResult',
 
   //ClientToServer
   CREATE_ROOM: 'createRoom',
@@ -34,7 +37,9 @@ export interface ServerToClientEvents {
   roomUpdate: (roomId: string, players: string[]) => void;
   gameStarts:() => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
+  turnUpdate: (turn: string) => void;
   handUpdate: (cards: Card[]) => void;
+  doubted: (doubter: string)=> void;
 }
 
 export interface ClientToServerEvents {

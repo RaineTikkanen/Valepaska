@@ -1,3 +1,4 @@
+
 export interface Play {
   user: string;
   statement: Statement
@@ -9,7 +10,6 @@ export interface Statement {
 }
 
 export interface GameStateUpdate {
-  turn: string;
   lastPlay: Play;
-  amountOfCardsInPlay: number | null;
+  amountOfCardsInPlay: number;
 }

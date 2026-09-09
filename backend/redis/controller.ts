@@ -47,7 +47,8 @@ const createRoom = async (roomId: string ) => {
 }
 
 const removeUserFromGame = async (roomId: string, userId: string) => {
-  const index = await getUserIndexInAGame(roomId, userId);
+  const users = await getUsersInAGame(roomId);
+  const index = getUserIndex(userId, users);
   await client.json.del(
     roomId,
     {path: `$.users[${index}]`}
@@ -79,13 +80,22 @@ const setTurnIndex = async (roomId: string, index: number) => {
   )
 }
 
+const setTurnIndexByUserId = async (roomId: string, userId: string)  => {
+  const users = await getUsersInAGame(roomId);
+  const userIndex = getUserIndex(userId, users)
+  await setTurnIndex(roomId, userIndex)
+}
 
-const nextTurn = async (roomId: string) => {
-
-  const turnIndex = await client.json.get(
+const getTurnIndex = async(roomId: string): Promise<number> => {
+  return await client.json.get(
     roomId, 
     {path: '.turnIndex'}
   ) as number
+}
+
+const advanceTurn = async (roomId: string): Promise<string>=> {
+
+  const turnIndex = await getTurnIndex(roomId)
 
   const users = await getUsersInAGame(roomId)
 
@@ -94,9 +104,10 @@ const nextTurn = async (roomId: string) => {
 
   if(users.length-1 === turnIndex){
     await setTurnIndex(roomId, 0)
+    return users[0].id;
   }else{
     await setTurnIndex(roomId, turnIndex+1)
-
+    return users[turnIndex+1].id
   }
 }
 
@@ -108,7 +119,9 @@ const getPlayDeck = async (roomId: string): Promise<Card[]> => {
 }
 
 const removePlayedCardsFromUserHand = async (roomId: string, userId: string, playedCards: Card[]) => {
-  const userIndex = await getUserIndexInAGame(roomId, userId)
+  const users = await getUsersInAGame(roomId)
+  
+  const userIndex = getUserIndex(userId, users)
 
   if (userIndex === null || userIndex < 0) return
 
@@ -143,6 +156,7 @@ const play = async (roomId: string, play: Play) => {
 
   await removePlayedCardsFromUserHand(roomId, play.user, play.cards)
 
+  //update last play
   await client.json.set( 
     roomId, 
     '$.lastPlay', 
@@ -155,9 +169,8 @@ const play = async (roomId: string, play: Play) => {
       }
     }
   );
-
   
-
+  //update playdeck
   for (const card of play.cards) {
     await client.json.arrAppend(
       roomId,
@@ -166,9 +179,11 @@ const play = async (roomId: string, play: Play) => {
     );
   }
 
-  await dealCardsToUserById(roomId, play.user, play.statement.amount)
+  const userHand = await getUserHand(roomId, play.user);
+  
+  await dealCardsToUserById(roomId, play.user, 5-userHand.length)
+  
 
-  await nextTurn(roomId);
 }
 
 
@@ -177,11 +192,15 @@ const play = async (roomId: string, play: Play) => {
  * @param roomId 
  * @returns 
  */
-const getUsersInAGame = async (roomId: string): Promise<User[] | null> =>{
-  return await client.json.get(
+const getUsersInAGame = async (roomId: string): Promise<User[]> => {
+  const users = await client.json.get(
     roomId, 
     {path: '.users'}
   ) as User[] | null;
+
+  if(users===null) throw new Error('Users not found')
+
+  return users
 }
 
 
@@ -192,11 +211,7 @@ const getUsersInAGame = async (roomId: string): Promise<User[] | null> =>{
  * @param userId 
  * @returns 
  */
-const getUserIndexInAGame = async (roomId: string, userId: string): Promise<number | null> => {
-  const users = await getUsersInAGame(roomId)
-
-  if (!users) return null
-  
+const getUserIndex = (userId: string, users: User[]): number=> {  
   return users.findIndex(p => p.id === userId); 
 }
 
@@ -206,20 +221,14 @@ const getUserIndexInAGame = async (roomId: string, userId: string): Promise<numb
  * @param userId
  * @returns
  */
-const getUserHand = async (roomId: string, userId: string): Promise<Card[] | null> => {
-  const index = await getUserIndexInAGame(roomId, userId)
+const getUserHand = async (roomId: string, userId: string): Promise<Card[]> => {
+  const users = await getUsersInAGame(roomId);
 
-  if (index === null) return null
+  const index = getUserIndex(userId, users)
 
-  const hand = await client.json.get(
-    roomId,
-    { path: `$.users[${index}].hand` }
-  ) as Card[][] | null
+  if (index === -1) throw new Error('Index not found')
 
-
-  console.log('REDIS CONTROLLER: hand: ', hand);
-
-  return hand?.[0] ?? null;
+  return users[index].hand;
 }
 
 
@@ -286,7 +295,9 @@ const getCardFromDeck = async (roomId: string): Promise<Card | null> => {
  * @returns  
  */
 const dealCardsToUserById = async (roomId: string, userId: string, amount: number) =>{
-  const index = await getUserIndexInAGame(roomId, userId)
+  const users = await getUsersInAGame(roomId)
+
+  const index = getUserIndex(userId, users)
 
   if(index==null) return
 
@@ -295,14 +306,14 @@ const dealCardsToUserById = async (roomId: string, userId: string, amount: numbe
 
 
 
+
+
 /**
  * Deals 5 cards to each user in a game, draws the starting player and changes 'isActive' to 'true'
  * @param roomId   
  */
-const initiateGame = async (roomId: string) => {
+const initiateGame = async (roomId: string): Promise<string> => {
   const users = await getUsersInAGame(roomId)
-
-  if(users==null) return
 
   for (const user of users) {
     await dealCardsToUserById(roomId, user.id, 5);
@@ -320,6 +331,7 @@ const initiateGame = async (roomId: string) => {
     '$.isActive',
     true
   )
+  return users[starterIndex].id
 }
 
 
@@ -335,6 +347,17 @@ const getGameState = async (roomId: string): Promise<GameState | null>=> {
   return await client.json.get(roomId) as GameState | null;
 }
 
+const getLastPlay = async (roomId: string): Promise<Play> => {
+  const lastPlay = await client.json.get(
+    roomId,
+    { path: '.lastPlay' }
+  ) as Play | null
+
+  if(lastPlay===null) throw new Error('LastPlay not found')
+  
+  return lastPlay
+}
+
 
 
 const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | null> => {
@@ -343,10 +366,7 @@ const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | n
   
   if (gameState===null) throw new Error('GameState not found') 
 
-  const users = gameState.users;
-  if(gameState.turnIndex===null) throw new Error('GameState.turnIndex not found')
 
-  const turn = users[gameState.turnIndex].id;
 
   if(gameState.lastPlay && gameState.lastPlay.statement){
     const lastPlay: servicePlay= {
@@ -357,9 +377,7 @@ const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | n
 
     const playDeck = await getPlayDeck(roomId);
 
-    console.log(playDeck.length)
     return {
-      turn: turn,
       lastPlay: lastPlay,
       amountOfCardsInPlay: playDeck.length
     }
@@ -367,9 +385,57 @@ const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate | n
   return null
 }
 
+const clearPlaydeck = async (roomId: string) => {
+
+  await client.json.set(
+      roomId,
+      '$.playDeck',
+      []
+    );
+}
+
+const clearLastPlay = async (roomId: string) => {
+
+  await client.json.set(
+    roomId,
+    '$.lastPlay',
+    {
+        cards: [],
+        user: null,
+        statement: {
+          value: null,
+          amount: null,
+        },
+      },
+  )
+}
+
+const playDeckToUser = async (roomId: string, userId:string) =>{
+  const playDeck = await getPlayDeck(roomId);
+  const users = await getUsersInAGame(roomId);
+  const userIndex = getUserIndex(userId, users);
+
+  await appendUserHandByIndex(roomId, userIndex, playDeck)
+
+}
+
+const lastStatementIsTrue = async (roomId: string): Promise<boolean> => {
+
+  const lastPlay = await getLastPlay(roomId);
+
+  if (lastPlay === null || lastPlay.statement.amount === null ||
+      lastPlay.statement.value === null || !Array.isArray(lastPlay.cards)) {
+    throw new Error('No last play')
+  }
+
+  return lastPlay.cards.every(card => card.value === lastPlay.statement.value)
+
+}
+
 export default{
   play, 
   getGameState, 
+  getLastPlay,
   createRoom,
   deleteRoom,
   addUserToGame,
@@ -379,4 +445,10 @@ export default{
   getUserHand,
   getGameStateUpdate,
   removeUserFromGame,
+  advanceTurn,
+  lastStatementIsTrue,
+  playDeckToUser,
+  clearPlaydeck,
+  clearLastPlay,
+  setTurnIndexByUserId,
 }
