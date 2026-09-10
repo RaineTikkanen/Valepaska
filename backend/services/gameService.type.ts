@@ -5,11 +5,12 @@ export interface Play {
 }
 
 export interface Statement {
-  value: number | null;
-  amount: number | null;
+  value: number;
+  amount: number;
 }
 
 export interface GameStateUpdate {
   lastPlay: Play;
   amountOfCardsInPlay: number;
+  sameCardsInPlay: number;
 }

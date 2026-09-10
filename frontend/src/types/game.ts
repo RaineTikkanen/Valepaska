@@ -17,6 +17,7 @@ interface GameStateUpdate {
   turn: string;
   lastPlay: Play;
   amountOfCardsInPlay: number;
+  sameCardsInPlay: number;
 }
 
 type Play = {
@@ -25,8 +26,8 @@ type Play = {
 };
 
 type Statement = {
-  value: number | null,
-  amount: number | null,
+  value: number,
+  amount: number,
 };
 
 

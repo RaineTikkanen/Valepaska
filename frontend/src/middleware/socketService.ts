@@ -25,10 +25,12 @@ import {
   resetGame,
   setLastPlay,
   setAmountOfCardsInPlay,
+  setSameCardsInPlay,
   setDoubter,
   clearDoubter,
   setDoubtResult,
   clearDoubtResult,
+  setAboutToClear,
 } from '../pages/Game/gameSlice.js';
 
 import { playCards, setCards, doubt } from '../pages/Game/handSlice.js';
@@ -67,6 +69,13 @@ socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   if(storeRef){
     storeRef.dispatch(setLastPlay(gameState.lastPlay));
     storeRef.dispatch(setAmountOfCardsInPlay(gameState.amountOfCardsInPlay));
+    storeRef.dispatch(setSameCardsInPlay(gameState.sameCardsInPlay));
+  }
+});
+
+socket.on(SocketEvents.ABOUT_TO_CLEAR, ()=>{
+  if(storeRef){
+    storeRef.dispatch(setAboutToClear(true));
   }
 });
 
@@ -79,21 +88,22 @@ socket.on(SocketEvents.TURN_UPDATE, (turn: string)=>{
 
 socket.on(SocketEvents.DOUBTED, (doubter: string)=>{
   if(storeRef){
-    storeRef.dispatch(setDoubter(doubter))
+    storeRef.dispatch(setAboutToClear(false));
+    storeRef.dispatch(setDoubter(doubter));
   }
-})
+});
 
 socket.on(SocketEvents.DOUBT_RESULT, (cards: Card[])=>{
   const store = storeRef;
   if(store){
     store.dispatch(clearDoubter());
-    store.dispatch(setDoubtResult(cards))
+    store.dispatch(setDoubtResult(cards));
 
     setTimeout(()=>{
-      store.dispatch(clearDoubtResult())
-    },3000)
+      store.dispatch(clearDoubtResult());
+    },3000);
   }
-})
+});
 
 socket.on(SocketEvents.ERROR, (error)=>{
   console.log('socketService - ERROR:', error);
@@ -206,9 +216,9 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
           if(userId){
             socket.emit(SocketEvents.DOUBT, roomId, userId, (result)=>{
               if(result === 'ERR'){
-                console.log('Failed to doubt')
+                console.log('Failed to doubt');
               }
-            })
+            });
           }
         }
       }

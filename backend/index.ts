@@ -22,6 +22,7 @@ export const SocketEvents = {
   HAND_UPDATE: 'handUpdate',
   DOUBTED: 'doubted',
   DOUBT_RESULT: 'doubtResult',
+  ABOUT_TO_CLEAR: 'aboutToClear',
 
   //ClientToServer
   CREATE_ROOM: 'createRoom',
@@ -40,6 +41,7 @@ export interface ServerToClientEvents {
   turnUpdate: (turn: string) => void;
   handUpdate: (cards: Card[]) => void;
   doubted: (doubter: string)=> void;
+  aboutToClear: ()=>void;
 }
 
 export interface ClientToServerEvents {

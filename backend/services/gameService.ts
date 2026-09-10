@@ -6,8 +6,12 @@ import { SocketEvents } from '../index.js';
 import { GameStateUpdate, Statement } from './gameService.type.js';
 import { Play } from '../redis/controller.type.js';
 import { Card } from '../deck/deck.type.js';
+import { timeout } from '../utils/utils.js';
+
 
 const gameService = (io: Server, socket: Socket) => {
+  let stopPlayAction = false;
+
   const ping = () => {
     console.log('User ', socket.id, 'pinged');
   };
@@ -87,6 +91,7 @@ const gameService = (io: Server, socket: Socket) => {
       //send delt cards to clients
       for (const user of users) {
         const hand = user.hand;
+        console.log(hand)
         io.to(user.id).emit(SocketEvents.HAND_UPDATE, hand);
       }
 
@@ -125,6 +130,11 @@ const gameService = (io: Server, socket: Socket) => {
     userId: string,
     callback: (result: string) => void,
   ) => {
+    //Cancel possible play action
+
+    stopPlayAction=true;
+
+
     //Send clients notification that someone is doubting
     io.to(roomId).emit(SocketEvents.DOUBTED, userId);
 
@@ -162,16 +172,24 @@ const gameService = (io: Server, socket: Socket) => {
         lastPlay: {
           user: '',
           statement: {
-            value: null,
-            amount: null,
+            value: 0,
+            amount: 0,
           },
         },
         amountOfCardsInPlay: 0,
+        sameCardsInPlay: 0
       };
       io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
 
-      redisController.setTurnIndexByUserId(roomId, nextTurn);
-      io.to(roomId).emit(SocketEvents.TURN_UPDATE, nextTurn);
+      redisController
+        .setTurnIndexByUserId(roomId, nextTurn)
+        .then(() => {
+          io.to(roomId).emit(SocketEvents.TURN_UPDATE, nextTurn);
+        })
+        .catch(()=>{
+          console.log('ERROR')
+        });
+
     }, 5000);
 
     await redisController.clearLastPlay(roomId);
@@ -186,8 +204,11 @@ const gameService = (io: Server, socket: Socket) => {
     statement: Statement,
     callback: (result: string) => void,
   ) => {
-    console.group();
-    console.log('PLAY');
+    
+    if(statement.value===null || statement.amount===null) {
+      callback('ERR') 
+      return
+    }
 
     const parsedRoomId = parseId(roomId);
     const parsedUserId = parseId(userId);
@@ -201,60 +222,76 @@ const gameService = (io: Server, socket: Socket) => {
     try {
       //Call play action in redis
       await redisController.play(parsedRoomId, play);
-    } catch (e) {
-      console.error('Error while calling "play" redis function: ', e);
-      callback('ERR');
-    }
+    
 
-    //Update user hand
-    try {
+      //Update user hand
+   
       const userHand = await redisController.getUserHand(roomId, userId);
       io.to(userId).emit(SocketEvents.HAND_UPDATE, userHand);
-    } catch (e) {
-      console.error('Error updating user hand: ', e);
-      callback('ERR');
-    }
+  
 
-    //get game and send to clients
-    try {
+
+      //Check if there are enough same cards played to clear the deck
+      const statementHistory= await redisController.getStatementHistory(roomId);
+      console.log('Statementhistory: ', statementHistory);
+
+      if(statement.value===statementHistory.value){
+        await redisController.setStatementHistory(roomId,{amount: statement.amount+statementHistory.amount, value: statement.value})
+      }else{
+        await redisController.setStatementHistory(roomId,{amount: statement.amount, value: statement.value})
+      }
+    
+
+      //get game and send to clients
+    
       const gameStateUpdate = await redisController.getGameStateUpdate(roomId);
       io.to(parsedRoomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
-    } catch (e) {
-      console.error(
-        'Error getting gameStateUpdate from redis and updating to clients: ',
-        e,
-      );
-      callback('ERR');
-    }
 
-    //If played card is stated to be ace or 10 play stops for a while to wait doubts and then the playDeck is cleared
-    if (statement.value === 1 || statement.value === 10) {
-      setTimeout(async () => {
-        redisController.clearPlaydeck(roomId);
-        redisController.clearLastPlay(roomId);
-        const gameStateUpdate =
-          await redisController.getGameStateUpdate(roomId);
-        io.to(parsedRoomId).emit(
-          SocketEvents.GAME_STATE_UPDATE,
-          gameStateUpdate,
-        );
-      }, 8000);
 
-      //If played card is not stated to be ace or 10 play goes on normally
-    } else {
-      try {
-        //Advance turn
-        const turn = await redisController.advanceTurn(roomId);
-        //Send turn update to clients
-        io.to(parsedRoomId).emit(SocketEvents.TURN_UPDATE, turn);
-      } catch (e) {
-        console.error('Error updating turn: ', e);
-        callback('ERR');
+
+      //If played card is stated to be ace or 10, or there are 4 same cards on play, play stops for a while to wait doubts and then the playDeck is cleared
+      if (statement.value === 1 || statement.value === 10 || gameStateUpdate.sameCardsInPlay>=4) {
+        await deckAboutToClear(roomId)
+        callback('OK');
+        return;  
       }
+      
+      //If played card is not stated to be ace or 10 play goes on normally
+  
+      //Advance turn
+      const turn = await redisController.advanceTurn(roomId);
+      //Send turn update to clients
+      io.to(parsedRoomId).emit(SocketEvents.TURN_UPDATE, turn);
+    
+  
+      callback('OK');
+      stopPlayAction=false;
+    }catch(e){
+      callback('ERR')
+      console.log('Error in play action: ',e)
     }
-    callback('OK');
-    console.groupEnd();
   };
+
+  const deckAboutToClear = async (roomId: string) =>{
+    io.to(roomId).emit(SocketEvents.ABOUT_TO_CLEAR);
+    await timeout(8000);
+
+
+    //If someone has doubted the play action is stopped
+    if(stopPlayAction){
+      console.log('STOPPING PLAY ACTION')
+      stopPlayAction=false
+      return
+    }
+      
+    console.log('gameDeck clearing activated')
+    await redisController.clearPlaydeck(roomId);
+    await redisController.clearLastPlay(roomId);
+    const gameStateUpdate = await redisController.getGameStateUpdate(roomId);
+    console.log(gameStateUpdate)
+    io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
+    return;  
+  }
 
   socket.on(SocketEvents.PING, ping);
   socket.on(SocketEvents.CREATE_ROOM, createRoom);

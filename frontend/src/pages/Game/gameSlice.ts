@@ -7,8 +7,10 @@ export interface GameState {
   turn: string;
   lastPlay: Play;
   amountOfCardsInPlay: number;
+  sameCardsInPlay: number;
   doubter: string;
   doubtResult: Card[] | null;
+  aboutToClear: boolean,
 }
 
 const initialState: GameState = {
@@ -17,13 +19,15 @@ const initialState: GameState = {
   lastPlay: {
     player: '',
     statement:{
-      value: null,
-      amount: null,
+      value: 0,
+      amount: 0,
     }
   },
   doubter: '',
   amountOfCardsInPlay: 0,
+  sameCardsInPlay: 0,
   doubtResult: null,
+  aboutToClear: false,
 };
 
 export const gameSlice = createSlice({
@@ -46,6 +50,9 @@ export const gameSlice = createSlice({
     setAmountOfCardsInPlay: (state, action: PayloadAction<number>)=>{
       state.amountOfCardsInPlay = action.payload;
     },
+    setSameCardsInPlay: (state, action: PayloadAction<number>)=>{
+      state.sameCardsInPlay = action.payload;
+    },
     setDoubter: (state, action: PayloadAction<string>) =>{
       state.doubter = action.payload;
     },
@@ -58,9 +65,11 @@ export const gameSlice = createSlice({
     clearDoubtResult: (state) =>{
       state.doubtResult=null;
     },
+    setAboutToClear: (state, action: PayloadAction<boolean>) =>{
+      state.aboutToClear=action.payload; 
+    }
   }
 });
-
 
 export const {
   startGame,
@@ -69,10 +78,12 @@ export const {
   setTurn,
   setLastPlay,
   setAmountOfCardsInPlay,
+  setSameCardsInPlay,
   setDoubter,
   clearDoubter,
   setDoubtResult,
-  clearDoubtResult
+  clearDoubtResult,
+  setAboutToClear,
 } = gameSlice.actions;
 
 export default gameSlice.reducer;

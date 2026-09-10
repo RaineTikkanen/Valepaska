@@ -1,4 +1,5 @@
 import { Card } from '../deck/deck.type.js';
+import { Statement } from '../services/gameService.type.js';
 
 export interface User {
   id: string;
@@ -11,11 +12,6 @@ export interface Play {
   statement: Statement;
 }
 
-export interface Statement {
-  value: number | null;
-  amount: number | null;
-}
-
 export interface GameState {
   isActive: boolean;
   turnIndex: number;
@@ -23,4 +19,5 @@ export interface GameState {
   playDeck: Card[];
   users: User[];
   lastPlay: Play;
+  statementHistory: Statement
 }
