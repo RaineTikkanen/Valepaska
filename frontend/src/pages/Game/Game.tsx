@@ -21,6 +21,7 @@ const UserList = ({ turn }: { turn: string }) => {
   const socket = useAppSelector((state) => state.socket);
   const user = localStorage.getItem('userId');
 
+
   const users =socket.users.reduce((acc: string[], curr: string) => {
     if (curr !== user) {
       acc.push(curr);
@@ -78,6 +79,9 @@ const Game = () => {
       void navigate('/lobby');
     }
   };
+  console.log('game.lastPlay.player :',game.lastPlay.user);
+  console.log('user: ', user);
+  console.log('game.lastPlay.player === user: ', game.lastPlay.user === user);
 
   return (
     <div className="">
@@ -92,14 +96,7 @@ const Game = () => {
         onClick={onLeaveGame}
       />
       <UserList turn={turn} />
-      <LastPlayView 
-        lastPlay={game.lastPlay}
-        amountOfCardsInPlay={game.amountOfCardsInPlay}
-        sameCardsInPlay={game.sameCardsInPlay}
-        aboutToClear={game.aboutToClear}
-        doubter={game.doubter}
-        doubtResult={game.doubtResult}
-      />
+      <LastPlayView />
       <div className="absolute inset-x-0 bottom-0 flex flex-col">
         <div className="flex justify-center">
           <Hand />
@@ -107,7 +104,7 @@ const Game = () => {
         <div className="flex flex-row justify-center ">
           <Button
             text="Epäile"
-            disabled={game.lastPlay.player === user}
+            disabled={game.lastPlay.user === user}
             onClick={() => {
               dispatch(doubt());
             }}

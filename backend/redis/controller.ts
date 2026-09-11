@@ -40,7 +40,7 @@ const createRoom = async (roomId: string ) => {
       },
       lastPlay: {
         cards: [],
-        user: null,
+        user: '',
         statement: {
           value: 0,
           amount: 0,
@@ -421,10 +421,10 @@ const clearLastPlay = async (roomId: string) => {
     '$.lastPlay',
     {
       cards: [],
-      user: null,
+      user: 0,
       statement: {
-        value: null,
-        amount: null,
+        value: 0,
+        amount: 0,
       },
     },
   )

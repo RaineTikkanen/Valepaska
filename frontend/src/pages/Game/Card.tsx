@@ -17,18 +17,22 @@ function CardComponent({ card }: { card: Card }) {
 
   const dispatch=useAppDispatch();
 
+  const cantSelect = (selectedCards.length>3 && !isSelected)
+
 
   const onClick = (card: Card) => {
+    if(cantSelect) return;
     dispatch(toggleCardSelectState(card));
     setIsSelected(!isSelected);
   };
   const cardName = card.name;
 
+  console.log(selectedCards)
 
   return (
     <div
       key={cardName} 
-      className={` max-w-35 min-w-35 transition-all ${isSelected ? '-mt-6' : ''}`}
+      className={` max-w-35 min-w-35 transition-all ${cantSelect? 'cursor-not-allowed':'hover:cursor-pointer' } ${isSelected ? '-mt-6' : ''}`}
       onClick={() => onClick(card)}
     >
       <img

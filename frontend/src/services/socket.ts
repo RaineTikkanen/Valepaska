@@ -7,7 +7,6 @@ import type { Card, GameStateUpdate, Statement } from '../types/game.js';
 export const SocketEvents = {
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
-  PING: 'ping',
   ERROR: 'connect_error',
 
   //ServerToClient
@@ -30,7 +29,6 @@ export const SocketEvents = {
 } as const;
 
 export interface ClientToServerEvents {
-  ping: () => void;
   createRoom: (userId: string, callback: (result: string) => void) => void;
   joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
   startGame: (roomId: string, callback: (result: string) => void) => void; 
@@ -41,7 +39,6 @@ export interface ClientToServerEvents {
 
 
 export interface ServerToClientEvents {
-  ping: () => void;
   gameStarts: () => void; 
   roomUpdate: (roomId: string, players: string[]) => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;

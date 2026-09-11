@@ -5,14 +5,12 @@ import { PORT, REDIS_URL, WEBSOCKET_PORT } from './utils/config.js'
 import gameService from './services/gameService.js';
 import { GameStateUpdate } from './services/gameService.type.js'
 import cors from 'cors';
-import { socketLogger } from './utils/middleware/socketLogger.js';
 import { Card } from './deck/deck.type.js';
 import { v7 as uuidv7 } from 'uuid';
 
 export const SocketEvents = {
   CONNECT: 'connect',
   DISCONNECT: 'disconnect',
-  PING: 'ping',
 
   //ServerToClient
   ROOM_UPDATE: 'roomUpdate',
@@ -34,7 +32,6 @@ export const SocketEvents = {
 } as const;
 
 export interface ServerToClientEvents {
-  ping: () => void;
   roomUpdate: (roomId: string, players: string[]) => void;
   gameStarts:() => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
@@ -45,7 +42,6 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  ping: () => void;
   createRoom: (userId:string, callback:(result: string) => void) => void;
   joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
   leaveRoom: (roomId: string, userId: string, callback:(result: string) => void) => void;
@@ -83,7 +79,6 @@ const onConnect = (socket: Socket) => {
 }
 
 io.listen(WEBSOCKET_PORT);
-io.use(socketLogger);
 io.on('connection', onConnect)
 
 app.get('/health', (_req, res) => {

@@ -21,7 +21,7 @@ interface GameStateUpdate {
 }
 
 type Play = {
-  player: string,
+  user: string,
   statement: Statement,
 };
 

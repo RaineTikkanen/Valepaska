@@ -1,55 +1,46 @@
-import type { Card, Play } from '../../types/game.js';
 import cardNumbers from '../../assets/cardNumbers.js';
 import cardImages from '../../assets/cardImages.js';
 import cardBack from '../../assets/cardBack.svg';
 import Timer from '../../components/Timer';
+import { useAppSelector, useAppDispatch } from '../../hooks/redux';
+import { setAboutToClear } from './gameSlice.js';
 
 
-interface lastPlayViewProps { 
-  lastPlay: Play, 
-  amountOfCardsInPlay: number, 
-  sameCardsInPlay: number,
-  doubter: string, 
-  doubtResult: Card[] | null,
-  aboutToClear: boolean,
-};
 
-const LastPlayView = (props: lastPlayViewProps) => {
-  const lastPlay = props.lastPlay; 
-  const amountOfCardsInPlay = props.amountOfCardsInPlay; 
-  const sameCardsInPlay = props.sameCardsInPlay;
-  const doubter = props.doubter;
-  const doubtResult = props.doubtResult;
-  const aboutToClear = props.aboutToClear;
+const LastPlayView = () => {
 
-  if (lastPlay.statement.value === 0 || lastPlay.statement.amount === 0) return;
+  const game = useAppSelector((state)=> state.game);
+  const dispatch = useAppDispatch();
 
-  const value = lastPlay.statement.value;
+
+  if (game.lastPlay.statement.value === 0 || game.lastPlay.statement.amount === 0) return;
+
+  const value = game.lastPlay.statement.value;
   const numberImage = `N${value}` as keyof typeof cardNumbers;
 
-  const amount = lastPlay.statement.amount;
-  const doubtWasCorrect = doubtResult !== null && !doubtResult.every((card) => card.value === value);
+  const amount = game.lastPlay.statement.amount;
+  const doubtWasCorrect = game.doubtResult !== null && !game.doubtResult.every((card) => card.value === value);
 
-  const showAceTimer = (aboutToClear);
+  const showAceTimer = game.aboutToClear;
 
-  console.log('doubtResult: ', doubtResult);
+  console.log('doubtResult: ', game.doubtResult);
   console.log('showAceTimer: ', showAceTimer);
 
   return (
     <div className="relative">
-      {doubter !== '' && (
+      {game.doubter !== '' && (
         <div className="absolute inset-x-0 top-0 z-10 flex justify-center">
           <div className="rounded-xl bg-red-600 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
-            {doubter} epäilee!!
+            {game.doubter} epäilee!!
           </div>
         </div>
       )}
-      {doubtResult !== null && (
+      {game.doubtResult !== null && (
         <div className="absolute inset-x-0 top-0 z-10 flex justify-center">
           <div className="rounded-xl bg-amber-500 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
             <p>{doubtWasCorrect ? 'Epäily oli oikein!' : 'Epäily oli väärä!'}</p>
             <div className="mt-3 flex max-w-[90vw] flex-wrap justify-center gap-2">
-              {doubtResult.map((card) => (
+              {game.doubtResult.map((card) => (
                 <img
                   key={card.name}
                   src={cardImages[card.name]}
@@ -66,13 +57,16 @@ const LastPlayView = (props: lastPlayViewProps) => {
           <div className="rounded-xl bg-blue-600 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
             Pakka kaatuu
           </div>
-          <Timer duration={7} />
+          <Timer 
+            duration={7} 
+            onComplete={()=>{dispatch(setAboutToClear(false));}}
+          />
         </div>
       )}
       
       <div className="flex flex-col h-100 items-center justify-center my-3"> 
-        <p>Kortteja pöydässä: {amountOfCardsInPlay}</p>
-        {sameCardsInPlay > 1 && <p>Samoja kortteja : {sameCardsInPlay}</p>}
+        <p>Kortteja pöydässä: {game.amountOfCardsInPlay}</p>
+        {game.sameCardsInPlay > 1 && <p>Samoja kortteja : {game.sameCardsInPlay}</p>}
         <img
           src={cardBack}
           alt="Card back"

@@ -12,10 +12,6 @@ import { timeout } from '../utils/utils.js';
 const gameService = (io: Server, socket: Socket) => {
   let stopPlayAction = false;
 
-  const ping = () => {
-    console.log('User ', socket.id, 'pinged');
-  };
-
   const joinRoomInternal = async (roomId: string, userId: string) => {
     await redisController.addUserToGame(roomId, userId);
     await socket.join(roomId);
@@ -36,7 +32,7 @@ const gameService = (io: Server, socket: Socket) => {
 
       callback('OK');
     } catch (e) {
-      console.log('ERROR: ', e);
+      console.error('ERROR: ', e);
       callback('ERR');
     }
   };
@@ -52,7 +48,7 @@ const gameService = (io: Server, socket: Socket) => {
 
       await joinRoomInternal(gameId, parsedUserId);
     } catch (e) {
-      console.log('ERROR: ', e);
+      console.error('ERROR: ', e);
       callback('ERR');
     }
     callback('OK');
@@ -74,8 +70,6 @@ const gameService = (io: Server, socket: Socket) => {
     roomId: string,
     callback: (result: string) => void,
   ) => {
-    console.group();
-    console.log('START GAME');
     try {
       const parsedRoomId = parseId(roomId);
 
@@ -91,7 +85,6 @@ const gameService = (io: Server, socket: Socket) => {
       //send delt cards to clients
       for (const user of users) {
         const hand = user.hand;
-        console.log(hand)
         io.to(user.id).emit(SocketEvents.HAND_UPDATE, hand);
       }
 
@@ -101,7 +94,6 @@ const gameService = (io: Server, socket: Socket) => {
       callback('ERR');
     }
     callback('OK');
-    console.groupEnd();
   };
 
   const leaveRoom = async (
@@ -133,7 +125,6 @@ const gameService = (io: Server, socket: Socket) => {
     //Cancel possible play action
 
     stopPlayAction=true;
-
 
     //Send clients notification that someone is doubting
     io.to(roomId).emit(SocketEvents.DOUBTED, userId);
@@ -187,7 +178,7 @@ const gameService = (io: Server, socket: Socket) => {
           io.to(roomId).emit(SocketEvents.TURN_UPDATE, nextTurn);
         })
         .catch(()=>{
-          console.log('ERROR')
+          console.error('ERROR')
         });
 
     }, 5000);
@@ -213,6 +204,7 @@ const gameService = (io: Server, socket: Socket) => {
     const parsedRoomId = parseId(roomId);
     const parsedUserId = parseId(userId);
 
+
     const play: Play = {
       cards: cards,
       user: parsedUserId,
@@ -233,7 +225,6 @@ const gameService = (io: Server, socket: Socket) => {
 
       //Check if there are enough same cards played to clear the deck
       const statementHistory= await redisController.getStatementHistory(roomId);
-      console.log('Statementhistory: ', statementHistory);
 
       if(statement.value===statementHistory.value){
         await redisController.setStatementHistory(roomId,{amount: statement.amount+statementHistory.amount, value: statement.value})
@@ -268,7 +259,7 @@ const gameService = (io: Server, socket: Socket) => {
       stopPlayAction=false;
     }catch(e){
       callback('ERR')
-      console.log('Error in play action: ',e)
+      console.error('Error in play action: ',e)
     }
   };
 
@@ -279,21 +270,17 @@ const gameService = (io: Server, socket: Socket) => {
 
     //If someone has doubted the play action is stopped
     if(stopPlayAction){
-      console.log('STOPPING PLAY ACTION')
       stopPlayAction=false
       return
     }
       
-    console.log('gameDeck clearing activated')
     await redisController.clearPlaydeck(roomId);
     await redisController.clearLastPlay(roomId);
     const gameStateUpdate = await redisController.getGameStateUpdate(roomId);
-    console.log(gameStateUpdate)
     io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
     return;  
   }
 
-  socket.on(SocketEvents.PING, ping);
   socket.on(SocketEvents.CREATE_ROOM, createRoom);
   socket.on(SocketEvents.JOIN_ROOM, joinRoom);
   socket.on(SocketEvents.START_GAME, startGame);
