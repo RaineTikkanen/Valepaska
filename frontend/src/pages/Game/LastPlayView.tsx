@@ -53,7 +53,7 @@ const LastPlayView = () => {
         </div>
       )}
       {showAceTimer && (
-        <div className="flex-row absolute inset-x-0 top-0 z-10 flex justify-center">
+        <div className="absolute inset-x-0 top-0 z-10 flex flex-row justify-center">
           <div className="rounded-xl bg-blue-600 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
             Pakka kaatuu
           </div>
@@ -64,20 +64,20 @@ const LastPlayView = () => {
         </div>
       )}
       
-      <div className="flex flex-col h-100 items-center justify-center my-3"> 
+      <div className="my-3 flex h-100 flex-col items-center justify-center"> 
         <p>Kortteja pöydässä: {game.amountOfCardsInPlay}</p>
         {game.sameCardsInPlay > 1 && <p>Samoja kortteja : {game.sameCardsInPlay}</p>}
         <img
           src={cardBack}
           alt="Card back"
-          className="w-24 sm:w-36  max-w-full h-auto object-contain shadow-md"
+          className="h-auto w-24  max-w-full object-contain shadow-md sm:w-36"
         />
-        <div className="flex items-center my-5">
+        <div className="my-5 flex items-center">
           {amount >1 && <p className="text-5xl">{amount} x</p>}
           <img
             src={cardNumbers[numberImage]}
             alt="Card number"
-            className="size-9 ml-2"
+            className="ml-2 size-9"
           />
         </div>
       </div>

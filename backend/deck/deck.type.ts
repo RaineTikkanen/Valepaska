@@ -1,8 +1,9 @@
 
-type CardName = `${CardSuit}${CardValue}`
+type CardName = `${CardSuit}${CardValue}`;
 
 
-type CardSuit = 'C' | 'D' | 'H' | 'S';
+const CardSuits = ['C', 'D', 'H', 'S'] as const;
+type CardSuit = typeof CardSuits[number];
 
 type Card = {
   name: CardName;
@@ -11,7 +12,8 @@ type Card = {
 };
 
 
-type CardValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11| 12 | 13 ;
+const CardValues = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+type CardValue = typeof CardValues[number];
 
-
-export type { Card };
+export { CardValues, CardSuits };
+export type { Card, CardSuit, CardName, CardValue };

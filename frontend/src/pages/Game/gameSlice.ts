@@ -17,7 +17,7 @@ const initialState: GameState = {
   isActive: false,
   turn: '',
   lastPlay: {
-    player: '',
+    user: '',
     statement:{
       value: 0,
       amount: 0,

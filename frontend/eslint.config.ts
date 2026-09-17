@@ -55,6 +55,7 @@ export default defineConfig([
       '@stylistic/semi': ['error'],
       '@typescript-eslint/no-unsafe-assignment': 'error',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+      
     },
   },
   {

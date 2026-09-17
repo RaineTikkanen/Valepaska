@@ -1,7 +1,7 @@
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import { defineConfig } from 'eslint/config';
-import stylistic from '@stylistic/eslint-plugin'
+import stylistic from '@stylistic/eslint-plugin';
 
 export default defineConfig([
   tseslint.configs.recommendedTypeChecked,
@@ -26,7 +26,12 @@ export default defineConfig([
       '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
       '@stylistic/indent': ['error', 2],
       '@stylistic/linebreak-style': ['error', 'unix'],
-      '@typescript-eslint/no-unsafe-assignment': 'error'
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/consistent-type-imports': 'error',
+
+      '@stylistic/no-multi-spaces': ['error'],
+      '@stylistic/semi': ['error'],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     }
   },
   {

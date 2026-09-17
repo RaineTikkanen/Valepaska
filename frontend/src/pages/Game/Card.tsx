@@ -17,7 +17,7 @@ function CardComponent({ card }: { card: Card }) {
 
   const dispatch=useAppDispatch();
 
-  const cantSelect = (selectedCards.length>3 && !isSelected)
+  const cantSelect = (selectedCards.length>3 && !isSelected);
 
 
   const onClick = (card: Card) => {
@@ -27,7 +27,7 @@ function CardComponent({ card }: { card: Card }) {
   };
   const cardName = card.name;
 
-  console.log(selectedCards)
+  console.log(selectedCards);
 
   return (
     <div

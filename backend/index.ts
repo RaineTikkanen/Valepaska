@@ -1,11 +1,12 @@
 import express from 'express';
-import { Server, Socket } from 'socket.io';
+import type { Socket } from 'socket.io';
+import { Server } from 'socket.io';
 import { createServer } from 'node:http';
-import { PORT, REDIS_URL, WEBSOCKET_PORT } from './utils/config.js'
+import { PORT, REDIS_URL, WEBSOCKET_PORT } from './utils/config.js';
 import gameService from './services/gameService.js';
-import { GameStateUpdate } from './services/gameService.type.js'
+import type { GameStateUpdate } from './services/gameService.type.js';
 import cors from 'cors';
-import { Card } from './deck/deck.type.js';
+import type { Card } from './deck/deck.type.js';
 import { v7 as uuidv7 } from 'uuid';
 
 export const SocketEvents = {
@@ -56,8 +57,8 @@ interface SocketData {
   roomId: string;
 }
 
-const app = express()
-const server = createServer(app)
+const app = express();
+const server = createServer(app);
 const io = new Server<
   ClientToServerEvents,
   ServerToClientEvents,
@@ -69,17 +70,17 @@ const io = new Server<
 });
 
 
-app.use(express.static('dist'))
+app.use(express.static('dist'));
 app.use(express.json());
 app.use(cors());
 
 
 const onConnect = (socket: Socket) => {
-  gameService(io, socket)
-}
+  gameService(io, socket);
+};
 
 io.listen(WEBSOCKET_PORT);
-io.on('connection', onConnect)
+io.on('connection', onConnect);
 
 app.get('/health', (_req, res) => {
   res.send({ health_status: 'OK' });
@@ -87,14 +88,14 @@ app.get('/health', (_req, res) => {
 
 app.get('/userId', (_req, res) => {
   const id = uuidv7();
-  console.log('GuestUserId created: ', id)
+  console.log('GuestUserId created: ', id);
   res.json({'id':id});
-})
+});
 
 
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`WebSocket port ${WEBSOCKET_PORT}`)
-  console.log(`Redis running on port ${REDIS_URL}`)
+  console.log(`WebSocket port ${WEBSOCKET_PORT}`);
+  console.log(`Redis running on port ${REDIS_URL}`);
 });

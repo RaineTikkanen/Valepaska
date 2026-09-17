@@ -1,23 +1,41 @@
-import { Server, Socket } from 'socket.io';
+import type { Server, Socket } from 'socket.io';
 import { v7 as uuidv7 } from 'uuid';
 import redisController from '../redis/controller.js';
 import { parseId } from '../utils/utils.js';
 import { SocketEvents } from '../index.js';
-import { GameStateUpdate, Statement } from './gameService.type.js';
-import { Play } from '../redis/controller.type.js';
-import { Card } from '../deck/deck.type.js';
+import type { GameStateUpdate, Statement } from './gameService.type.js';
+import type { Play, User } from '../redis/controller.type.js';
+import type { Card } from '../deck/deck.type.js';
 import { timeout } from '../utils/utils.js';
 
 
 const gameService = (io: Server, socket: Socket) => {
   let stopPlayAction = false;
 
+  /**
+ * Returns users index in users array   
+ * @param userId 
+ * @param users[]
+ * @returns index
+ */
+  const getIndexInUsersArray = (userId: string, users: User[]): number=> {  
+    const index= users.findIndex(p => p.id === userId); 
+    if(index===-1) throw new Error('Cant find user index');
+    return index;
+  };
+
+
   const joinRoomInternal = async (roomId: string, userId: string) => {
+    const isActive = await redisController.getIsActive(roomId);
+
+    if(isActive) throw new Error('game is already active');
+
     await redisController.addUserToGame(roomId, userId);
     await socket.join(roomId);
     await socket.join(userId);
     await roomUpdate(roomId);
   };
+ 
 
   const joinRoom = async (
     roomId: string,
@@ -55,15 +73,20 @@ const gameService = (io: Server, socket: Socket) => {
   };
 
   const roomUpdate = async (roomId: string) => {
-    const users = await redisController.getUsersInAGame(roomId);
-    if (users === null) throw new Error('Users not found');
+    try{
+      const parsedRoomId = parseId(roomId);
+      const users = await redisController.getUsersInAGame(parsedRoomId);
+      if (users === null) throw new Error('Users not found');
 
-    if (users.length === 0) {
-      await redisController.deleteRoom(roomId);
+      if (users.length === 0) {
+        await redisController.deleteRoom(parsedRoomId);
+      }
+
+      const userIds = users.map((user) => user.id);
+      io.to(parsedRoomId).emit(SocketEvents.ROOM_UPDATE, parsedRoomId, userIds);
+    }catch(e){
+      console.error('ERROR: ', e);
     }
-
-    const userIds = users.map((user) => user.id);
-    io.to(roomId).emit(SocketEvents.ROOM_UPDATE, roomId, userIds);
   };
 
   const startGame = async (
@@ -82,9 +105,10 @@ const gameService = (io: Server, socket: Socket) => {
 
       io.to(parsedRoomId).emit(SocketEvents.GAME_STARTS);
 
-      //send delt cards to clients
+      //send dealt cards to clients
       for (const user of users) {
         const hand = user.hand;
+        console.log('HAND: ', hand);
         io.to(user.id).emit(SocketEvents.HAND_UPDATE, hand);
       }
 
@@ -105,7 +129,10 @@ const gameService = (io: Server, socket: Socket) => {
       const parsedRoomId = parseId(roomId);
       const parsedUserId = parseId(userId);
 
-      await redisController.removeUserFromGame(parsedRoomId, parsedUserId);
+      const users = await redisController.getUsersInAGame(parsedRoomId);
+      const userIndex = getIndexInUsersArray(parsedUserId, users);
+
+      await redisController.removeUserFromGame(parsedRoomId, userIndex);
       await socket.leave(parsedRoomId);
       await socket.leave(parsedUserId);
 
@@ -117,23 +144,27 @@ const gameService = (io: Server, socket: Socket) => {
     }
   };
 
+
   const doubt = async (
     roomId: string,
     userId: string,
     callback: (result: string) => void,
   ) => {
     //Cancel possible play action
-
     stopPlayAction=true;
 
-    //Send clients notification that someone is doubting
-    io.to(roomId).emit(SocketEvents.DOUBTED, userId);
+    const parsedRoomId = parseId(roomId);
+    const parsedUserId = parseId(userId);
 
-    const lastPlay = await redisController.getLastPlay(roomId);
+    //Send clients notification that someone is doubting
+    io.to(parsedRoomId).emit(SocketEvents.DOUBTED, parsedUserId);
+
+    const lastPlay = await redisController.getLastPlay(parsedRoomId);
+    const users = await redisController.getUsersInAGame(parsedRoomId);
 
     //Wait a while and send doubt results
     setTimeout(() => {
-      io.to(roomId).emit(SocketEvents.DOUBT_RESULT, lastPlay.cards);
+      io.to(parsedRoomId).emit(SocketEvents.DOUBT_RESULT, lastPlay.cards);
     }, 2000);
 
     let loserId = '';
@@ -141,21 +172,26 @@ const gameService = (io: Server, socket: Socket) => {
 
     //set loserId and nextTurn based on doubt results
     const lastStatementIsTrue =
-      await redisController.lastStatementIsTrue(roomId);
+      await redisController.lastStatementIsTrue(parsedRoomId);
     if (lastStatementIsTrue) {
-      loserId = userId;
+      loserId = parsedUserId;
       nextTurn = lastPlay.user;
     } else {
       loserId = lastPlay.user;
-      nextTurn = userId;
+      nextTurn = parsedUserId;
     }
 
     //Doubt loser gets playdeck in hand
-    await redisController.playDeckToUser(roomId, loserId);
-    await redisController.clearPlaydeck(roomId);
+    await redisController.playDeckToUser(parsedRoomId, loserId);
+    await redisController.clearPlayDeck(parsedRoomId);
 
     //After a while send handUpdate to loser and send playdeck update and turn update to everyone
-    const loserHand = await redisController.getUserHand(roomId, loserId);
+    const updatedUsers = await redisController.getUsersInAGame(parsedRoomId);
+    const loserHand = updatedUsers.find((u)=> u.id === loserId)?.hand;
+
+    if(!loserHand) throw new Error('Cant find loserId in users');
+
+
     setTimeout(() => {
       io.to(loserId).emit(SocketEvents.HAND_UPDATE, loserHand);
 
@@ -170,23 +206,25 @@ const gameService = (io: Server, socket: Socket) => {
         amountOfCardsInPlay: 0,
         sameCardsInPlay: 0
       };
-      io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
+      io.to(parsedRoomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
+
 
       redisController
-        .setTurnIndexByUserId(roomId, nextTurn)
+        .setTurn(parsedRoomId, nextTurn)
         .then(() => {
-          io.to(roomId).emit(SocketEvents.TURN_UPDATE, nextTurn);
+          io.to(parsedRoomId).emit(SocketEvents.TURN_UPDATE, nextTurn);
         })
         .catch(()=>{
-          console.error('ERROR')
+          console.error('ERROR');
         });
 
     }, 5000);
 
-    await redisController.clearLastPlay(roomId);
+    await redisController.clearLastPlay(parsedRoomId);
 
     callback('OK');
   };
+
 
   const play = async (
     roomId: string,
@@ -197,8 +235,8 @@ const gameService = (io: Server, socket: Socket) => {
   ) => {
     
     if(statement.value===null || statement.amount===null) {
-      callback('ERR') 
-      return
+      callback('ERR'); 
+      return;
     }
 
     const parsedRoomId = parseId(roomId);
@@ -212,54 +250,71 @@ const gameService = (io: Server, socket: Socket) => {
     };
 
     try {
+      //Check it is right player's turn
+      const turn = await redisController.getTurn(parsedRoomId);
+      const users = await redisController.getUsersInAGame(parsedRoomId);
+      let turnIndex = getIndexInUsersArray(turn, users);
+
+
       //Call play action in redis
       await redisController.play(parsedRoomId, play);
     
 
       //Update user hand
    
-      const userHand = await redisController.getUserHand(roomId, userId);
-      io.to(userId).emit(SocketEvents.HAND_UPDATE, userHand);
+      const updatedUsers = await redisController.getUsersInAGame(parsedRoomId);
+      const userHand = updatedUsers.find((u)=>u.id === parsedUserId)?.hand;
+      if(!userHand) throw new Error('Cant find user');
+
+
+      io.to(parsedUserId).emit(SocketEvents.HAND_UPDATE, userHand);
   
 
 
       //Check if there are enough same cards played to clear the deck
-      const statementHistory= await redisController.getStatementHistory(roomId);
+      const statementHistory= await redisController.getStatementHistory(parsedRoomId);
 
       if(statement.value===statementHistory.value){
-        await redisController.setStatementHistory(roomId,{amount: statement.amount+statementHistory.amount, value: statement.value})
+        await redisController.setStatementHistory(parsedRoomId,{amount: statement.amount+statementHistory.amount, value: statement.value});
       }else{
-        await redisController.setStatementHistory(roomId,{amount: statement.amount, value: statement.value})
+        await redisController.setStatementHistory(parsedRoomId,{amount: statement.amount, value: statement.value});
       }
     
 
       //get game and send to clients
     
-      const gameStateUpdate = await redisController.getGameStateUpdate(roomId);
+      const gameStateUpdate = await redisController.getGameStateUpdate(parsedRoomId);
       io.to(parsedRoomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
 
 
 
       //If played card is stated to be ace or 10, or there are 4 same cards on play, play stops for a while to wait doubts and then the playDeck is cleared
       if (statement.value === 1 || statement.value === 10 || gameStateUpdate.sameCardsInPlay>=4) {
-        await deckAboutToClear(roomId)
+        await deckAboutToClear(parsedRoomId);
         callback('OK');
         return;  
       }
       
       //If played card is not stated to be ace or 10 play goes on normally
-  
+      if(users.length-1 === turnIndex){
+        turnIndex = 0;
+      }else{
+        turnIndex++;
+      }
+
       //Advance turn
-      const turn = await redisController.advanceTurn(roomId);
+      const nextTurn = users[turnIndex].id;
+      await redisController.setTurn(roomId, nextTurn);
+
       //Send turn update to clients
-      io.to(parsedRoomId).emit(SocketEvents.TURN_UPDATE, turn);
+      io.to(parsedRoomId).emit(SocketEvents.TURN_UPDATE, nextTurn);
     
   
       callback('OK');
       stopPlayAction=false;
     }catch(e){
-      callback('ERR')
-      console.error('Error in play action: ',e)
+      callback('ERR');
+      console.error('Error in play action: ',e);
     }
   };
 
@@ -270,16 +325,16 @@ const gameService = (io: Server, socket: Socket) => {
 
     //If someone has doubted the play action is stopped
     if(stopPlayAction){
-      stopPlayAction=false
-      return
+      stopPlayAction=false;
+      return;
     }
       
-    await redisController.clearPlaydeck(roomId);
+    await redisController.clearPlayDeck(roomId);
     await redisController.clearLastPlay(roomId);
     const gameStateUpdate = await redisController.getGameStateUpdate(roomId);
     io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
     return;  
-  }
+  };
 
   socket.on(SocketEvents.CREATE_ROOM, createRoom);
   socket.on(SocketEvents.JOIN_ROOM, joinRoom);
