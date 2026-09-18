@@ -3,9 +3,8 @@ import { REDIS_URL } from '../utils/config.js';
 import getShuffledDeck from '../deck/deck.js';
 import type { Card } from '../deck/deck.type.js';
 import type { Play, User, GameState } from './controller.type.js';
-import type { Play as servicePlay, Statement} from '../services/gameService.type.js';
-import type { GameStateUpdate } from '../services/gameService.type.js';
-import { getRandomInt } from '../utils/utils.js';
+import type {Statement} from '../services/gameService.type.js';
+import { getRandomInt, parseCard } from '../utils/utils.js';
 
 
 
@@ -111,76 +110,40 @@ const getPlayDeck = async (roomId: string): Promise<Card[]> => {
   ) as Card[];
 };
 
-//TODO: Move logic to gameService
-const removePlayedCardsFromUserHand = async (roomId: string, userId: string, playedCards: Card[]) => {
-  const users = await getUsersInAGame(roomId);
-  
-  const userIndex = users.findIndex((u) => u.id === userId);
-
-  if (userIndex === -1) throw new Error('User not found');
-
-  const hand = await client.json.get(
-    roomId,
-    {path: `$.users[${userIndex}].hand`}
-  ) as Card[][] | null;
-
-  if (hand === null) throw new Error('userHand not found');
-
-  const remainingHand = [...hand[0]];
-
-  for (const playedCard of playedCards) {
-    const cardIndex = remainingHand.findIndex(
-      card => JSON.stringify(card) === JSON.stringify(playedCard)
-    );
-
-    if (cardIndex !== -1) remainingHand.splice(cardIndex, 1);
-  }
-
-  await client.json.set(
-    roomId,
-    `$.users[${userIndex}].hand`,
-    remainingHand
-  );
-};
-
-
-
-//TODO: move logic to gameService
-const play = async (roomId: string, play: Play) => {
-
-  if (play.statement.amount === null) return;
-
-  await removePlayedCardsFromUserHand(roomId, play.user, play.cards);
-
-  //update last play
-  await client.json.set( 
-    roomId, 
-    '$.lastPlay', 
-    {
-      cards: play.cards, 
-      user: play.user,
-      statement: {
-        value: play.statement.value,
-        amount: play.statement.amount
-      }
-    }
-  );
-  
-  //update play deck
-  for (const card of play.cards) {
+const appendPlayDeck = async (roomId: string, cards: Card[]) => {
+  console.log('appendPlayDeck');
+  for (const card of cards) {
     await client.json.arrAppend(
       roomId,
       '$.playDeck',
       card
     );
   }
-
-  const users = await getUsersInAGame(roomId);
-  const userHand = users.find((u) => u.id === play.user)?.hand;
-  if(!userHand) throw new Error('Error finding users');
-
-  await dealCardsToUserById(roomId, play.user, 5-userHand.length);
 };
+
+
+//OK
+const clearPlayDeck = async (roomId: string) => {
+
+  const result = await client.json.set(
+    roomId,
+    '$.playDeck',
+    []
+  );
+  
+  if(!result) throw new Error('Error clearing play deck');
+};
+
+
+const setUserHand = async (roomId: string, hand: Card[], userIndex: number) => {
+  const result = await client.json.set(
+    roomId,
+    `$.users[${userIndex}].hand`,
+    hand
+  );
+  if(result !== 'OK') throw new Error('Failed to set user hand');
+};
+
 
 
 /**
@@ -219,9 +182,6 @@ const appendUserHandByIndex = async (roomId: string, index: number, cards: Card[
   }
 };
 
-
-
-//TODO: Move logic to gameservice
 /**
  * Deals number of cards to a user by index
  * @param roomId 
@@ -233,9 +193,9 @@ const dealCardsToUserByIndex = async (roomId: string, index: number, amount: num
 
 
   for(let i=0; i < amount; i++){
-    const card = await getCardFromDeck(roomId);
+    const card = await popCardFromDeck(roomId);
 
-    if (card===null) return;
+    if (!card) return;
 
     cards= cards.concat(card);
   }
@@ -244,30 +204,15 @@ const dealCardsToUserByIndex = async (roomId: string, index: number, amount: num
 
 
 //OK
-const getCardFromDeck = async (roomId: string): Promise<Card | null> => {
-  return await client.json.arrPop(
+const popCardFromDeck = async (roomId: string): Promise<Card | null> => {
+  const result = await client.json.arrPop(
     roomId,
     {path: '.deck'}
-  ) as Card | null;
-};
+  );
 
+  if(result === null) return null;
 
-//TODO: MOVE LOGIC TO GAMESERVICE
-/**
- * Deals number of cards to a user
- * @param roomId 
- * @param userId user to deal cards to
- * @param amount number of cards to deal 
- * @returns  
- */
-const dealCardsToUserById = async (roomId: string, userId: string, amount: number) =>{
-  const users = await getUsersInAGame(roomId);
-
-  const index = users.findIndex((u) => u.id === userId);
-
-  if(index==null) return;
-
-  await dealCardsToUserByIndex(roomId, index, amount);
+  return parseCard(result);
 };
 
 
@@ -282,8 +227,10 @@ const dealCardsToUserById = async (roomId: string, userId: string, amount: numbe
 const initiateGame = async (roomId: string): Promise<string> => {
   const users = await getUsersInAGame(roomId);
 
+
   for (const user of users) {
-    await dealCardsToUserById(roomId, user.id, 5);
+    const userIndex = users.findIndex((u) => u.id === user.id);
+    await dealCardsToUserByIndex(roomId, userIndex, 5);
   }
 
   const starterIndex = getRandomInt(users.length);
@@ -331,6 +278,41 @@ const getLastPlay = async (roomId: string): Promise<Play> => {
   return lastPlay;
 };
 
+const setLastPlay = async (roomId: string, play: Play) => {
+  const result = await client.json.set( 
+    roomId, 
+    '$.lastPlay', 
+    {
+      cards: play.cards, 
+      user: play.user,
+      statement: {
+        value: play.statement.value,
+        amount: play.statement.amount
+      }
+    }
+  );
+
+  if(result !== 'OK') throw new Error('cant set lastPlay');
+};
+
+
+const clearLastPlay = async (roomId: string) => {
+  const result = await client.json.set(
+    roomId,
+    '$.lastPlay',
+    {
+      cards: [],
+      user: 0,
+      statement: {
+        value: 0,
+        amount: 0,
+      },
+    },
+  );
+
+  if(!result) throw new Error('Error clearing last play');
+};
+
 
 //OK
 const getStatementHistory = async (roomId: string): Promise<Statement> => {
@@ -361,60 +343,25 @@ const setStatementHistory = async (
   if(!result) throw new Error('error setting statement history');
 };
 
-
-//TODO: Move logic to gameService
-const getGameStateUpdate = async (roomId: string, ): Promise<GameStateUpdate> => {
-  const gameState = await getGameState(roomId);
-
-  
-  if (!gameState) throw new Error('GameState not found'); 
-
-
-
-  const lastPlay: servicePlay= {
-    statement: gameState.lastPlay.statement,
-    user: gameState.lastPlay.user
-  };
-
-  const sameCardsInPlay = gameState.statementHistory.amount;
-
-  return {
-    lastPlay: lastPlay,
-    amountOfCardsInPlay: gameState.playDeck.length,
-    sameCardsInPlay: sameCardsInPlay,
-  };
-};
-
-//OK
-const clearPlayDeck = async (roomId: string) => {
-
+const clearStatementHistory = async (
+  roomId: string,
+) => {
   const result = await client.json.set(
     roomId,
-    '$.playDeck',
-    []
-  );
-  
-  if(!result) throw new Error('Error clearing play deck');
-};
-
-
-//Ok
-const clearLastPlay = async (roomId: string) => {
-  const result = await client.json.set(
-    roomId,
-    '$.lastPlay',
+    '$.statementHistory',
     {
-      cards: [],
-      user: 0,
-      statement: {
-        value: 0,
-        amount: 0,
-      },
-    },
+      value: 0,
+      amount: 0
+    }
   );
 
-  if(!result) throw new Error('Error clearing last play');
+  if(!result) throw new Error('error setting statement history');
 };
+
+
+
+
+
 
 
 //TODO: Move this logic to gameService
@@ -428,39 +375,29 @@ const playDeckToUser = async (roomId: string, userId:string) =>{
 };
 
 
-//TODO: Move this logic to gameService
-const lastStatementIsTrue = async (roomId: string): Promise<boolean> => {
 
-  const lastPlay = await getLastPlay(roomId);
-
-  if (!lastPlay || !lastPlay.statement.amount ||
-      !lastPlay.statement.value || !Array.isArray(lastPlay.cards)) {
-    throw new Error('No last play');
-  }
-
-  return lastPlay.cards.every(card => card.value === lastPlay.statement.value);
-
-};
 
 export default{
-  play, 
   getGameState, 
   getLastPlay,
+  setLastPlay,
+  clearLastPlay,
   getStatementHistory,
   setStatementHistory,
+  clearStatementHistory,
   createRoom,
   deleteRoom,
   addUserToGame,
   initiateGame,
-  dealCardsToUserById,
   getUsersInAGame,
-  getGameStateUpdate,
   removeUserFromGame,
-  lastStatementIsTrue,
   playDeckToUser,
+  getPlayDeck,
   clearPlayDeck,
-  clearLastPlay,
+  appendPlayDeck,
   getIsActive,
   setTurn,
   getTurn,
+  setUserHand,
+  popCardFromDeck,
 };
