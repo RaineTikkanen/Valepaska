@@ -1,6 +1,0 @@
-{
-    "prettier.singleQuote": true,
-    "eslint.format.enable": true,
-    "todo-tree.general.rootFolder": "./backend",
-    "editor.tabSize": 2
-}

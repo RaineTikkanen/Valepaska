@@ -17,6 +17,7 @@ interface ButtonProps {
 const CardSelectButton = (props: ButtonProps) => {
   const baseClass ='m-3 flex-1 rounded-xl p-3 duration-300 ';
   const selectedClass = baseClass.concat('bg-green-500 hover:bg-green-400 hover:cursor-pointer');
+  console.log(selectedClass);
   const defaultClass = baseClass.concat('bg-emerald-400 hover:bg-green-400 hover:cursor-pointer');
   const disabledClassName=baseClass.concat('bg-emerald-400/50 cursor-not-allowed');
 
@@ -55,11 +56,12 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
   //TODO: Implement the logic for disabling buttons of cards that are not playable based on the selected cards and the last play.
 
   // Disabled conditions:
-  const cantPlayCourt = lastPlay.statement.value !== null && lastPlay.statement.value < 7;
-  const cantPlayAce = lastPlay.statement.value !== null && lastPlay.statement.value < 11;
-  const cantPlay10 = lastPlay.statement.value !== null && lastPlay.statement.value >10;
-  const cantPlayNonCourt = lastPlay.statement.value !== null && lastPlay.statement.value >10;
-  const lastPlayIs2 = lastPlay.statement.value !== null && lastPlay.statement.value === 2;
+  const cantPlayCourt = lastPlay.statement.value !== 0 && lastPlay.statement.value < 7;
+  const cantPlayAce = lastPlay.statement.value !== 0 && lastPlay.statement.value < 11;
+  const cantPlay10 = lastPlay.statement.value !== 0 && lastPlay.statement.value >10;
+  const cantPlayNonCourt = lastPlay.statement.value !== 0 && lastPlay.statement.value >10;
+  const lastPlayIs2 = lastPlay.statement.value === 2;
+
 
   const dispatch = useAppDispatch();
 
