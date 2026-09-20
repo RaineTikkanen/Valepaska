@@ -51,11 +51,8 @@ const Game = () => {
 
   const isMyTurn = turn === user;
 
-  console.log(game.lastPlay.statement.value);
   const lastPlayIsAOr10 = game.lastPlay.statement.value === 1 || game.lastPlay.statement.value === 10;
 
-  console.log('lastPlayIsAOr10: ', lastPlayIsAOr10);
-  
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -79,9 +76,6 @@ const Game = () => {
       void navigate('/lobby');
     }
   };
-  console.log('game.lastPlay.player :',game.lastPlay.user);
-  console.log('user: ', user);
-  console.log('game.lastPlay.player === user: ', game.lastPlay.user === user);
 
   return (
     <div className="">
@@ -104,7 +98,7 @@ const Game = () => {
         <div className="flex flex-row justify-center ">
           <Button
             text="Epäile"
-            disabled={game.lastPlay.user === user}
+            disabled={game.lastPlay.user === user || !game.lastPlay.user}
             onClick={() => {
               dispatch(doubt());
             }}

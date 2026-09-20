@@ -61,7 +61,6 @@ socket.on(SocketEvents.GAME_STARTS, ()=>{
 });
 
 socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
-  console.log('MIDDLEWARE: ', cards);
   if (storeRef) storeRef.dispatch(setCards(cards));
 });
 
@@ -199,11 +198,9 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
           const statement = payload;
 
           const cards = store.getState().hand.selectedCards;
-          console.log('Middleware: [PLAY CARDS], cards: ',cards, 'Statement: ', statement);
           if(userId){
 
-            socket.emit(SocketEvents.PLAY, roomId, userId, cards, statement, (result)=>{
-              console.log(result);
+            socket.emit(SocketEvents.PLAY, roomId, userId, cards, statement, (_result)=>{
             });
           }
           break;  

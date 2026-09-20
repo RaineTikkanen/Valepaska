@@ -27,8 +27,6 @@ function CardComponent({ card }: { card: Card }) {
   };
   const cardName = card.name;
 
-  console.log(selectedCards);
-
   return (
     <div
       key={cardName} 

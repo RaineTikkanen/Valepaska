@@ -4,7 +4,7 @@ import getShuffledDeck from '../deck/deck.js';
 import type { Card } from '../deck/deck.type.js';
 import type { Play, User, GameState } from './controller.type.js';
 import type {Statement} from '../services/gameService.type.js';
-import { getRandomInt, parseCard } from '../utils/utils.js';
+import { parseCard } from '../utils/utils.js';
 
 
 
@@ -68,6 +68,16 @@ const getIsActive = async (roomId: string): Promise<boolean> => {
   if(typeof result !== 'boolean') throw new Error('Cant get isActive');
 
   return result;
+};
+
+const setIsActive = async (roomId: string, isActive: boolean) => {
+  const result = await client.json.set(
+    roomId,
+    '$isActive',
+    isActive
+  );
+
+  if(result !== 'OK') throw new Error('Cant set isActive');
 };
 
 const addUserToGame = async (roomId: string, userId: string) => {  
@@ -164,15 +174,13 @@ const getUsersInAGame = async (roomId: string): Promise<User[]> => {
 
 
 
-
-
 /**
  * Adds number of cards to a users hand
  * @param roomId 
  * @param index user index in users array
  * @param cards cards to add to hand
  */
-const appendUserHandByIndex = async (roomId: string, index: number, cards: Card[]) => {
+const appendUserHand = async (roomId: string, index: number, cards: Card[]) => {
   for (const card of cards) {
     await client.json.arrAppend(
       roomId,
@@ -184,22 +192,22 @@ const appendUserHandByIndex = async (roomId: string, index: number, cards: Card[
 
 /**
  * Deals number of cards to a user by index
- * @param roomId 
+ * @param roomId
  * @param index user index in users array
  * @param amount number of cards to deal
  */
-const dealCardsToUserByIndex = async (roomId: string, index: number, amount: number) => {
-  let cards: Array<Card>=[];
-
+const dealCardsFromDeck = async (roomId: string, amount: number): Promise<Card[]> => {
+  let cards: Card[]=[];
 
   for(let i=0; i < amount; i++){
     const card = await popCardFromDeck(roomId);
 
-    if (!card) return;
+    if (!card) break;
 
     cards= cards.concat(card);
   }
-  await appendUserHandByIndex(roomId, index, cards);  
+
+  return cards;
 };
 
 
@@ -213,41 +221,6 @@ const popCardFromDeck = async (roomId: string): Promise<Card | null> => {
   if(result === null) return null;
 
   return parseCard(result);
-};
-
-
-
-
-//TODO: MOVE LOGIC TO GAMESERVICE
-/**
- * Deals 5 cards to each user in a game, draws the starting player and changes 'isActive' to 'true'
- * @param roomId   
- */
-
-const initiateGame = async (roomId: string): Promise<string> => {
-  const users = await getUsersInAGame(roomId);
-
-
-  for (const user of users) {
-    const userIndex = users.findIndex((u) => u.id === user.id);
-    await dealCardsToUserByIndex(roomId, userIndex, 5);
-  }
-
-  const starterIndex = getRandomInt(users.length);
-  const starter = users[starterIndex].id;
-
-  await client.json.set(
-    roomId,
-    '$.turn',
-    starter
-  );
-
-  await client.json.set(
-    roomId,
-    '$.isActive',
-    true
-  );
-  return users[starterIndex].id;
 };
 
 
@@ -360,23 +333,6 @@ const clearStatementHistory = async (
 
 
 
-
-
-
-
-//TODO: Move this logic to gameService
-const playDeckToUser = async (roomId: string, userId:string) =>{
-  const playDeck = await getPlayDeck(roomId);
-  const users = await getUsersInAGame(roomId);
-  const userIndex = users.findIndex((u) => u.id === userId);
-
-  await appendUserHandByIndex(roomId, userIndex, playDeck);
-
-};
-
-
-
-
 export default{
   getGameState, 
   getLastPlay,
@@ -388,16 +344,16 @@ export default{
   createRoom,
   deleteRoom,
   addUserToGame,
-  initiateGame,
   getUsersInAGame,
   removeUserFromGame,
-  playDeckToUser,
   getPlayDeck,
   clearPlayDeck,
   appendPlayDeck,
   getIsActive,
+  setIsActive,
   setTurn,
   getTurn,
   setUserHand,
-  popCardFromDeck,
+  appendUserHand,
+  dealCardsFromDeck,
 };

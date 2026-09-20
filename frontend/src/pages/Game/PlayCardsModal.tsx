@@ -17,7 +17,6 @@ interface ButtonProps {
 const CardSelectButton = (props: ButtonProps) => {
   const baseClass ='m-3 flex-1 rounded-xl p-3 duration-300 ';
   const selectedClass = baseClass.concat('bg-green-500 hover:bg-green-400 hover:cursor-pointer');
-  console.log(selectedClass);
   const defaultClass = baseClass.concat('bg-emerald-400 hover:bg-green-400 hover:cursor-pointer');
   const disabledClassName=baseClass.concat('bg-emerald-400/50 cursor-not-allowed');
 

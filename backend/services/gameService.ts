@@ -1,7 +1,7 @@
 import type { Server, Socket } from 'socket.io';
 import { v7 as uuidv7 } from 'uuid';
 import redisController from '../redis/controller.js';
-import { parseCard, parseId } from '../utils/utils.js';
+import {getRandomInt, parseCard, parseId} from '../utils/utils.js';
 import { SocketEvents } from '../index.js';
 import type { GameStateUpdate, Statement } from './gameService.type.js';
 import type { Play } from '../redis/controller.type.js';
@@ -85,23 +85,34 @@ const gameService = (io: Server, socket: Socket) => {
     try {
       const parsedRoomId = parseId(roomId);
 
-      //initiate game. function returns starting user's id
-      const turn = await redisController.initiateGame(parsedRoomId);
-
       const users = await redisController.getUsersInAGame(parsedRoomId);
-      if (!users) throw new Error('No users found');
       if (users.length === 1) throw new Error('Not enough players');
+
+
+
+      for(let i = users.length - 1; i >= 0; i--) {
+        const cards = await redisController.dealCardsFromDeck(parsedRoomId, 5);
+        await redisController.setUserHand(parsedRoomId, cards, i);
+      }
+
+      const starterIndex = getRandomInt(users.length);
+      const starterId = users[starterIndex].id;
+
+      await redisController.setTurn(parsedRoomId, starterId);
+      await redisController.setIsActive(parsedRoomId, true);
 
       io.to(parsedRoomId).emit(SocketEvents.GAME_STARTS);
 
+      const updatedUsers = await redisController.getUsersInAGame(parsedRoomId);
+
       //send dealt cards to clients
-      for (const user of users) {
+      for (const user of updatedUsers) {
         const hand = user.hand;
         console.log('HAND: ', hand);
         io.to(user.id).emit(SocketEvents.HAND_UPDATE, hand);
       }
 
-      io.to(parsedRoomId).emit(SocketEvents.TURN_UPDATE, turn);
+      io.to(parsedRoomId).emit(SocketEvents.TURN_UPDATE, starterId);
     } catch (e) {
       console.error('ERROR: ', e);
       callback('ERR');
@@ -170,7 +181,10 @@ const gameService = (io: Server, socket: Socket) => {
     }
 
     //Doubt loser gets playdeck in hand
-    await redisController.playDeckToUser(parsedRoomId, loserId);
+    const playDeck = await redisController.getPlayDeck(parsedRoomId);
+    const users = await redisController.getUsersInAGame(parsedRoomId);
+    const loserIndex = helpers.getIndexInUsersArray(loserId, users);
+    await redisController.appendUserHand(parsedRoomId, loserIndex, playDeck);
     await redisController.clearPlayDeck(parsedRoomId);
 
     //After a while send handUpdate to loser and send playdeck update and turn update to everyone
@@ -253,12 +267,7 @@ const gameService = (io: Server, socket: Socket) => {
       const remainingHand = helpers.removeCardsFromCardsArray(parsedCards, users[turnIndex].hand);
 
       //Get new cards from play deck
-      const newCards: Array<Card>=[];
-      for(let i=0; i < play.cards.length; i++){
-        const card = await redisController.popCardFromDeck(parsedRoomId);
-        if (!card) break;
-        newCards.push(card);
-      }
+      const newCards = await redisController.dealCardsFromDeck(parsedRoomId, play.cards.length);
 
       //Add new cards to remaining hand
       const newHand = remainingHand.concat(newCards);
