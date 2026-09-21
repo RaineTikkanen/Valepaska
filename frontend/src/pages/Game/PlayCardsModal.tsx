@@ -52,8 +52,6 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
 
   const labelText = selectedCardsCount > 1 ? `Valitse minä kortteina haluat pelata ${selectedCardsCount} korttia` : 'Valitse minä korttina haluat pelata yhden kortin';
 
-  //TODO: Implement the logic for disabling buttons of cards that are not playable based on the selected cards and the last play.
-
   // Disabled conditions:
   const cantPlayCourt = lastPlay.statement.value !== 0 && lastPlay.statement.value < 7;
   const cantPlayAce = lastPlay.statement.value !== 0 && lastPlay.statement.value < 11;

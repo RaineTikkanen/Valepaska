@@ -5,7 +5,7 @@ export const isString = (text: unknown): text is string => {
 };
 
 export const isStatement = (value: unknown): value is Statement => {
-  
+
   if (typeof value !== 'object' || value === null) {
     return false;
   }

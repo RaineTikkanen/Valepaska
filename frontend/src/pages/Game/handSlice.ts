@@ -31,9 +31,6 @@ export const handSlice = createSlice({
       state.selectedCards = [];
     },
     playCards: (state, _action: PayloadAction<Statement>) => {
-      state.cards = state.cards.filter(
-        (card) => !state.selectedCards.some((c) => c.name === card.name),
-      );
       state.selectedCards=[];
     },
     toggleCardSelectState: (state, action: PayloadAction<Card>) => {

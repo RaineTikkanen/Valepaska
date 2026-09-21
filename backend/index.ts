@@ -52,7 +52,7 @@ export interface ClientToServerEvents {
   getGameState: (roomId: string, userId: string) => void;
 }
 
-interface SocketData {
+export interface SocketData {
   userId: string;
   roomId: string;
 }

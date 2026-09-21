@@ -46,6 +46,7 @@ const Game = () => {
   const game = useAppSelector((state)=> state.game);
   const hand = useAppSelector((state) => state.hand);
 
+
   const turn = game.turn;
   const user =localStorage.getItem('userId');
 
@@ -105,7 +106,7 @@ const Game = () => {
           />
           <Button
             text="Pelaa"
-            disabled={hand.selectedCards.length === 0 || isMyTurn === false || lastPlayIsAOr10}
+            disabled={hand.selectedCards.length === 0 || !isMyTurn || lastPlayIsAOr10 || game.sameCardsInPlay > 3}
             onClick={() => {
               toggleModal();
             }}

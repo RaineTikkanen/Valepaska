@@ -12,7 +12,11 @@ export interface Play {
   statement: Statement;
 }
 
+export type Status = 'IDLE' | 'PLAYING' | 'WAITING_DOUBT' | 'RESOLVING_DOUBT' | 'CLEARING';
+
 export interface GameState {
+  winners: string[];
+  status: Status
   isActive: boolean;
   turn: string;
   deck: Card[];
@@ -20,4 +24,14 @@ export interface GameState {
   users: User[];
   lastPlay: Play;
   statementHistory: Statement
+}
+
+export const parseStatus = (status: unknown): Status =>{
+  if(status !== 'PLAYING'
+      && status !== 'WAITING_DOUBT'
+      && status !== 'RESOLVING_DOUBT'
+      && status !== 'CLEARING'
+      && status !== 'IDLE'
+  ) throw new Error('Invalid status');
+  return status;
 }

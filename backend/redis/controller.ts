@@ -2,7 +2,7 @@ import redis from 'redis';
 import { REDIS_URL } from '../utils/config.js';
 import getShuffledDeck from '../deck/deck.js';
 import type { Card } from '../deck/deck.type.js';
-import type { Play, User, GameState } from './controller.type.js';
+import {Play, User, GameState, Status, parseStatus} from './controller.type.js';
 import type {Statement} from '../services/gameService.type.js';
 import { parseCard } from '../utils/utils.js';
 
@@ -12,23 +12,24 @@ const client = redis.createClient({
   url: REDIS_URL
 });
 
-client.on('error', err => console.log('Redis Client Error', err));
+client.on('error', err => console.error('Redis Client Error', err));
 
 await client.connect();
 
 /**
  * 
- * @param roomId Creates a game and adds one user in it
- * @param userId 
+ * @param roomId Creates a game
  *
  */
 const createRoom = async (roomId: string ) => {
   const deck = getShuffledDeck();
   const result = await client.json.set(
     roomId, 
-    '$', 
+    '$',
     {
+      winners: [],
       isActive: false,
+      status: 'IDLE',
       turn: null,
       deck: deck,
       playDeck: [],
@@ -48,9 +49,25 @@ const createRoom = async (roomId: string ) => {
     });
 
   if(!result) throw new Error('Error creating room');
-  return result;
 };
 
+const getStatus = async (roomId: string): Promise<Status> => {
+  const result = await client.json.get(
+    roomId,
+    {path: '.status'}
+  );
+  const parsedStatus = parseStatus(result);
+  return parsedStatus;
+};
+
+const setStatus = async (roomId: string, status: Status) => {
+  const result = await client.json.set(
+    roomId,
+    '$.status',
+    status,
+  );
+  if(result!=='OK') throw new Error('Error setting status');
+};
 
 const removeUserFromGame = async (roomId: string, userIndex: number) => {
   await client.json.del(
@@ -121,7 +138,6 @@ const getPlayDeck = async (roomId: string): Promise<Card[]> => {
 };
 
 const appendPlayDeck = async (roomId: string, cards: Card[]) => {
-  console.log('appendPlayDeck');
   for (const card of cards) {
     await client.json.arrAppend(
       roomId,
@@ -191,9 +207,8 @@ const appendUserHand = async (roomId: string, index: number, cards: Card[]) => {
 };
 
 /**
- * Deals number of cards to a user by index
+ * Pops cards from deck and returns them
  * @param roomId
- * @param index user index in users array
  * @param amount number of cards to deal
  */
 const dealCardsFromDeck = async (roomId: string, amount: number): Promise<Card[]> => {
@@ -211,7 +226,6 @@ const dealCardsFromDeck = async (roomId: string, amount: number): Promise<Card[]
 };
 
 
-//OK
 const popCardFromDeck = async (roomId: string): Promise<Card | null> => {
   const result = await client.json.arrPop(
     roomId,
@@ -224,22 +238,18 @@ const popCardFromDeck = async (roomId: string): Promise<Card | null> => {
 };
 
 
-//OK
 const deleteRoom = async (roomId: string) => {
-  const result = await client.del(roomId);
-  return result;
+  await client.del(roomId);
 };
 
 
-//OK
-const getGameState = async (roomId: string): Promise<GameState>=> { 
+const getGameState = async (roomId: string): Promise<GameState>=> {
   const result = await client.json.get(roomId) as GameState | null;
   if(!result) throw new Error('Error getting game state');
   return result;
 };
 
 
-//OK
 const getLastPlay = async (roomId: string): Promise<Play> => {
   const lastPlay = await client.json.get(
     roomId,
@@ -287,7 +297,6 @@ const clearLastPlay = async (roomId: string) => {
 };
 
 
-//OK
 const getStatementHistory = async (roomId: string): Promise<Statement> => {
   const result = await client.json.get(
     roomId,
@@ -299,7 +308,6 @@ const getStatementHistory = async (roomId: string): Promise<Statement> => {
 };
 
 
-//Ok
 const setStatementHistory = async (
   roomId: string,
   statement: Statement
@@ -331,6 +339,14 @@ const clearStatementHistory = async (
   if(!result) throw new Error('error setting statement history');
 };
 
+const appendToWinners = async (roomId: string, userId: string) => {
+  await client.json.arrAppend(
+    roomId,
+    '$.winners',
+    userId,
+  );
+};
+
 
 
 export default{
@@ -356,4 +372,7 @@ export default{
   setUserHand,
   appendUserHand,
   dealCardsFromDeck,
+  appendToWinners,
+  getStatus,
+  setStatus,
 };

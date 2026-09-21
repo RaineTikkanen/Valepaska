@@ -5,6 +5,7 @@ import type { Card } from '../deck/deck.type.js';
 
 const createGameStateUpdateFromGameState = (gameState: GameState) => {
   const gameStateUpdate: GameStateUpdate = {
+    winners: gameState.winners,
     lastPlay: {
       statement: gameState.lastPlay.statement,
       user: gameState.lastPlay.user,
@@ -28,7 +29,12 @@ const getIndexInUsersArray = (userId: string, users: User[]): number=> {
   return index;
 };
 
-const getNextTurnId = (users: User[], turnIndex: number): string => {
+const getNextTurnId = (users: User[], turnIndex: number, winners: string[]): string => {
+  const u = users.filter(u => !winners.includes(u.id));
+  console.debug('##############################################################');
+  console.log('winners:', winners);
+  console.log('users without winners:', u);
+  console.debug('##############################################################');
 
   if(users.length-1 === turnIndex){
     turnIndex = 0;

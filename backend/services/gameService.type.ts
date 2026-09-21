@@ -10,6 +10,7 @@ export interface Statement {
 }
 
 export interface GameStateUpdate {
+  winners: string[];
   lastPlay: Play;
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;

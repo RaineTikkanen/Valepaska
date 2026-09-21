@@ -33,7 +33,7 @@ import {
   setAboutToClear,
 } from '../pages/Game/gameSlice.js';
 
-import { playCards, setCards, doubt } from '../pages/Game/handSlice.js';
+import {playCards, setCards, doubt, removeCards} from '../pages/Game/handSlice.js';
 
 import { SocketEvents } from '../services/socket.js';
 
@@ -199,8 +199,12 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
 
           const cards = store.getState().hand.selectedCards;
           if(userId){
+            socket.emit(SocketEvents.PLAY, roomId, userId, cards, statement, (result)=>{
+              console.log(result);
+              if (result == 'OK') {
+                store.dispatch(removeCards(cards));
+              }else window.alert('Failed to play cards');
 
-            socket.emit(SocketEvents.PLAY, roomId, userId, cards, statement, (_result)=>{
             });
           }
           break;  
