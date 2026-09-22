@@ -12,6 +12,8 @@ services:
   redis:
     image: redis:8.0
     command: ['redis-server']
+    ports:
+      - 6379:6379
 
   app:
     image: valepaska-front-dev
@@ -21,6 +23,7 @@ services:
     volumes:
       - ./frontend:/usr/src/app
     environment:
+      - VITE_NODE_ENV=development
       - VITE_BACKEND_URL=http://localhost:8080/api/
       - VITE_WEBSOCKET_URL=http://localhost:8080/
     container_name: valepaska-front-dev

@@ -33,19 +33,19 @@ export interface ClientToServerEvents {
   joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
   startGame: (roomId: string, callback: (result: string) => void) => void; 
   leaveRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
-  play: (roomId: string, userId: string, cards: Card[], statement: Statement, callback: (result: string)=> void)=>void;
+  play: (roomId: string, userId: string, cards: Array<Card>, statement: Statement, callback: (result: string)=> void)=>void;
   doubt: (roomId: string, userId: string, callback: (result: string)=>void)=>void;
 }
 
 
 export interface ServerToClientEvents {
   gameStarts: () => void; 
-  roomUpdate: (roomId: string, players: string[]) => void;
+  roomUpdate: (roomId: string, players: Array<string>) => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   turnUpdate:(turn: string)=>void;
-  handUpdate: (cards: Card[]) => void;
+  handUpdate: (cards: Array<Card>) => void;
   doubted: (userId: string) => void;
-  doubtResult: (cards: Card[]) => void;
+  doubtResult: (cards: Array<Card>) => void;
   aboutToClear: ()=>void;
   
 }

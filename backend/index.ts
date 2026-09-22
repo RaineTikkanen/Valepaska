@@ -8,6 +8,7 @@ import type { GameStateUpdate } from './services/gameService.type.js';
 import cors from 'cors';
 import type { Card } from './deck/deck.type.js';
 import { v7 as uuidv7 } from 'uuid';
+import logger from './utils/logger.js';
 
 export const SocketEvents = {
   CONNECT: 'connect',
@@ -33,11 +34,11 @@ export const SocketEvents = {
 } as const;
 
 export interface ServerToClientEvents {
-  roomUpdate: (roomId: string, players: string[]) => void;
+  roomUpdate: (roomId: string, players: Array<string>) => void;
   gameStarts:() => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   turnUpdate: (turn: string) => void;
-  handUpdate: (cards: Card[]) => void;
+  handUpdate: (cards: Array<Card>) => void;
   doubted: (doubter: string)=> void;
   aboutToClear: ()=>void;
 }
@@ -88,14 +89,13 @@ app.get('/health', (_req, res) => {
 
 app.get('/userId', (_req, res) => {
   const id = uuidv7();
-  console.log('GuestUserId created: ', id);
   res.json({'id':id});
 });
 
 
 
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`WebSocket port ${WEBSOCKET_PORT}`);
-  console.log(`Redis running on port ${REDIS_URL}`);
+  logger.info(`Server running on port ${PORT}`);
+  logger.info(`WebSocket port ${WEBSOCKET_PORT}`);
+  logger.info(`Redis running on port ${REDIS_URL}`);
 });

@@ -2,7 +2,7 @@ import { configureStore, Tuple } from '@reduxjs/toolkit';
 import handReducer from './pages/Game/handSlice';
 import socketSlice from './pages/Lobby/socketSlice';
 import gameSlice from './pages/Game/gameSlice';
-import loggerMiddleware from './middleware/logger';
+import loggerMiddleware from './middleware/reduxLogger.ts';
 import socketMiddleware from './middleware/socketService';
 
 export const store = configureStore({

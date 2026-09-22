@@ -2,9 +2,11 @@ import redis from 'redis';
 import { REDIS_URL } from '../utils/config.js';
 import getShuffledDeck from '../deck/deck.js';
 import type { Card } from '../deck/deck.type.js';
-import {Play, User, GameState, Status, parseStatus} from './controller.type.js';
+import type {Play, User, GameState, Status} from './controller.type.js';
+import { parseStatus } from './controller.type.js';
 import type {Statement} from '../services/gameService.type.js';
-import { parseCard } from '../utils/utils.js';
+import { parseCard } from '../deck/deck.type.js';
+import logger from '../utils/logger.js';
 
 
 
@@ -17,8 +19,8 @@ client.on('error', err => console.error('Redis Client Error', err));
 await client.connect();
 
 /**
- * 
- * @param roomId Creates a game
+ * Creates a room with empty GameState
+ * @param {string} roomId Id for room to create
  *
  */
 const createRoom = async (roomId: string ) => {
@@ -51,15 +53,24 @@ const createRoom = async (roomId: string ) => {
   if(!result) throw new Error('Error creating room');
 };
 
+/**
+ * Function to get a status of a game. If status is not found or status is not valid status, throws an error
+ * @param {string} roomId Id of a room to get status from
+ * @returns {Status} status of a game
+ */
 const getStatus = async (roomId: string): Promise<Status> => {
   const result = await client.json.get(
     roomId,
     {path: '.status'}
   );
-  const parsedStatus = parseStatus(result);
-  return parsedStatus;
+  return parseStatus(result);
 };
 
+/**
+ * Set status of a game. Throws an error if setting the status fails
+ * @param {string} roomId Id of a room to get status from
+ * @param {Status} status to set
+ */
 const setStatus = async (roomId: string, status: Status) => {
   const result = await client.json.set(
     roomId,
@@ -69,14 +80,23 @@ const setStatus = async (roomId: string, status: Status) => {
   if(result!=='OK') throw new Error('Error setting status');
 };
 
-const removeUserFromGame = async (roomId: string, userIndex: number) => {
+/**
+ * Removes a user from a room
+ * @param {string} roomId Id of room
+ * @param userIndex
+ */
+const removeUserFromRoom = async (roomId: string, userIndex: number) => {
   await client.json.del(
     roomId,
     {path: `$.users[${userIndex}]`}
   );
 };
 
-
+/**
+ * Function to get isActive status from a game. Throws error if getting the status fails
+ * @param {string} roomId Id of room to get status from
+ * @returns {Promise<boolean>} isActive state
+ */
 const getIsActive = async (roomId: string): Promise<boolean> => {
   const result = await client.json.get(
     roomId,
@@ -87,17 +107,27 @@ const getIsActive = async (roomId: string): Promise<boolean> => {
   return result;
 };
 
+/**
+ * Function to set isActive state of a game. Throws an error if setting the status fails.
+ * @param {string} roomId Id of game to set status
+ * @param {boolean} isActive value to set status to
+ */
 const setIsActive = async (roomId: string, isActive: boolean) => {
   const result = await client.json.set(
     roomId,
-    '$isActive',
+    'isActive',
     isActive
   );
 
   if(result !== 'OK') throw new Error('Cant set isActive');
 };
 
-const addUserToGame = async (roomId: string, userId: string) => {  
+/**
+ * Function to add a user to a room.
+ * @param {string} roomId Id of room
+ * @param {string} userId Id of user to add
+ */
+const addUserToRoom = async (roomId: string, userId: string) => {
   await client.json.arrAppend(
     roomId,
     '$.users',
@@ -108,16 +138,26 @@ const addUserToGame = async (roomId: string, userId: string) => {
   );
 };
 
+/**
+ * Function to set turn in a game. Throws an error if setting the turn fails
+ * @param {string} roomId Id of room
+ * @param {sring} turn Id of user whose turn it is
+ */
 const setTurn = async (roomId: string, turn: string) => {
-  await client.json.set(
+  const result = await client.json.set(
     roomId,
     '$.turn',
     turn
   );
+  if(result !== 'OK') throw new Error('Cant set turn');
 };
 
 
-//OK
+/**
+ * Function to get the id of a player whose turn it is. Throws an error if turn is not found
+ * @param {string} roomId Id of room
+ * @returns {string} Id of user whose turn it is
+ */
 const getTurn = async(roomId: string): Promise<string> => {
   const result = await client.json.get(
     roomId, 
@@ -129,15 +169,26 @@ const getTurn = async(roomId: string): Promise<string> => {
   return result;
 };
 
-//OK
-const getPlayDeck = async (roomId: string): Promise<Card[]> => {
-  return await client.json.get(
+
+/**
+ * Function to get the play deck. Throws an error if getting the deck fails
+ * @param roomId
+ */
+const getPlayDeck = async (roomId: string): Promise<Array<Card>> => {
+  const result = await client.json.get(
     roomId,
     {path: '.playDeck'}
-  ) as Card[];
+  );
+  if(!Array.isArray(result)) throw new Error('Error getting play deck');
+  return result.map(c => parseCard(c));
 };
 
-const appendPlayDeck = async (roomId: string, cards: Card[]) => {
+/**
+ * Function to add cards to the play deck
+ * @param {string} roomId Id of room
+ * @param {Cards}cards
+ */
+const appendPlayDeck = async (roomId: string, cards: Array<Card>) => {
   for (const card of cards) {
     await client.json.arrAppend(
       roomId,
@@ -148,7 +199,10 @@ const appendPlayDeck = async (roomId: string, cards: Card[]) => {
 };
 
 
-//OK
+/**
+ * Function to clear the play deck. Throws an error if clearing fails.
+ * @param {}roomId
+ */
 const clearPlayDeck = async (roomId: string) => {
 
   const result = await client.json.set(
@@ -161,7 +215,7 @@ const clearPlayDeck = async (roomId: string) => {
 };
 
 
-const setUserHand = async (roomId: string, hand: Card[], userIndex: number) => {
+const setUserHand = async (roomId: string, hand: Array<Card>, userIndex: number) => {
   const result = await client.json.set(
     roomId,
     `$.users[${userIndex}].hand`,
@@ -177,11 +231,11 @@ const setUserHand = async (roomId: string, hand: Card[], userIndex: number) => {
  * @param roomId 
  * @returns 
  */
-const getUsersInAGame = async (roomId: string): Promise<User[]> => {
+const getUsersInAGame = async (roomId: string): Promise<Array<User>> => {
   const users = await client.json.get(
     roomId, 
     {path: '.users'}
-  ) as User[] | null;
+  ) as Array<User> | null;
 
   if(users===null) throw new Error('Users not found');
 
@@ -196,7 +250,7 @@ const getUsersInAGame = async (roomId: string): Promise<User[]> => {
  * @param index user index in users array
  * @param cards cards to add to hand
  */
-const appendUserHand = async (roomId: string, index: number, cards: Card[]) => {
+const appendUserHand = async (roomId: string, index: number, cards: Array<Card>) => {
   for (const card of cards) {
     await client.json.arrAppend(
       roomId,
@@ -211,8 +265,8 @@ const appendUserHand = async (roomId: string, index: number, cards: Card[]) => {
  * @param roomId
  * @param amount number of cards to deal
  */
-const dealCardsFromDeck = async (roomId: string, amount: number): Promise<Card[]> => {
-  let cards: Card[]=[];
+const dealCardsFromDeck = async (roomId: string, amount: number): Promise<Array<Card>> => {
+  let cards: Array<Card>=[];
 
   for(let i=0; i < amount; i++){
     const card = await popCardFromDeck(roomId);
@@ -322,6 +376,7 @@ const setStatementHistory = async (
   );
 
   if(!result) throw new Error('error setting statement history');
+  logger.debug('[redisController] getStatementHistory');
 };
 
 const clearStatementHistory = async (
@@ -337,6 +392,7 @@ const clearStatementHistory = async (
   );
 
   if(!result) throw new Error('error setting statement history');
+  logger.debug('[redisController] clearStatementHistory');
 };
 
 const appendToWinners = async (roomId: string, userId: string) => {
@@ -359,9 +415,9 @@ export default{
   clearStatementHistory,
   createRoom,
   deleteRoom,
-  addUserToGame,
+  addUserToRoom,
   getUsersInAGame,
-  removeUserFromGame,
+  removeUserFromRoom,
   getPlayDeck,
   clearPlayDeck,
   appendPlayDeck,

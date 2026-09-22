@@ -9,7 +9,7 @@ export interface GameState {
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;
   doubter: string;
-  doubtResult: Card[] | null;
+  doubtResult: Array<Card> | null;
   aboutToClear: boolean,
 }
 
@@ -59,7 +59,7 @@ export const gameSlice = createSlice({
     clearDoubter: (state)=>{
       state.doubter = '';
     },
-    setDoubtResult: (state, action: PayloadAction<Card[]>) =>{
+    setDoubtResult: (state, action: PayloadAction<Array<Card>>) =>{
       state.doubtResult = action.payload;
     },
     clearDoubtResult: (state) =>{

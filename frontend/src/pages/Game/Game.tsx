@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router';
 import PlayCardsModal from './PlayCardsModal';
 import LastPlayView from './LastPlayView.js';
 import { doubt } from './handSlice.js';
+import logger from '../../utils/logger.ts';
 
 const User = ({user, isActive}:{user:string, isActive:boolean}) => {
   return(
@@ -22,7 +23,7 @@ const UserList = ({ turn }: { turn: string }) => {
   const user = localStorage.getItem('userId');
 
 
-  const users =socket.users.reduce((acc: string[], curr: string) => {
+  const users =socket.users.reduce((acc: Array<string>, curr: string) => {
     if (curr !== user) {
       acc.push(curr);
     }
@@ -45,6 +46,8 @@ const UserList = ({ turn }: { turn: string }) => {
 const Game = () => {
   const game = useAppSelector((state)=> state.game);
   const hand = useAppSelector((state) => state.hand);
+
+  logger.debug('[Game] game: ', game);
 
 
   const turn = game.turn;

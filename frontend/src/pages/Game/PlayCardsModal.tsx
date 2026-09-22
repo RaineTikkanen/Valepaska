@@ -40,7 +40,7 @@ const CardSelectButton = (props: ButtonProps) => {
 interface PlayCardsModalProps {
   modalOn: boolean, 
   toggleModal: () => void, 
-  selectedCards: Card[], 
+  selectedCards: Array<Card>, 
   lastPlay: Play,
 }
 

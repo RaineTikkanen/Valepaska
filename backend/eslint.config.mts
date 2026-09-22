@@ -28,7 +28,7 @@ export default defineConfig([
       '@stylistic/linebreak-style': ['error', 'unix'],
       '@typescript-eslint/no-unsafe-assignment': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
-
+      '@typescript-eslint/array-type': ['error', {default: 'generic'}],
       '@stylistic/no-multi-spaces': ['error'],
       '@stylistic/semi': ['error'],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]

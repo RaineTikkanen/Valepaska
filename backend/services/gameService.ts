@@ -1,14 +1,15 @@
 import type { Server, Socket } from 'socket.io';
 import { v7 as uuidv7 } from 'uuid';
 import redisController from '../redis/controller.js';
-import {getRandomInt, parseCard, parseId} from '../utils/utils.js';
+import {getRandomInt, parseId} from '../utils/utils.js';
 import { SocketEvents } from '../index.js';
 import type { GameStateUpdate, Statement } from './gameService.type.js';
 import type {Play} from '../redis/controller.type.js';
 import type { Card } from '../deck/deck.type.js';
+import { parseCard } from '../deck/deck.type.js';
 import { timeout } from '../utils/utils.js';
 import helpers from './helpers.js';
-import e from "cors";
+import logger from '../utils/logger.js';
 
 
 const gameService = (io: Server, socket: Socket) => {
@@ -18,7 +19,7 @@ const gameService = (io: Server, socket: Socket) => {
 
     if(isActive) throw new Error('game is already active');
 
-    await redisController.addUserToGame(roomId, userId);
+    await redisController.addUserToRoom(roomId, userId);
     await socket.join(roomId);
     await socket.join(userId);
     await roomUpdate(roomId);
@@ -33,7 +34,6 @@ const gameService = (io: Server, socket: Socket) => {
     try {
       const parsedRoomId = parseId(roomId);
       const parsedUserId = parseId(userId);
-
       await joinRoomInternal(parsedRoomId, parsedUserId);
 
       callback('OK');
@@ -130,7 +130,7 @@ const gameService = (io: Server, socket: Socket) => {
       const users = await redisController.getUsersInAGame(parsedRoomId);
       const userIndex = helpers.getIndexInUsersArray(parsedUserId, users);
 
-      await redisController.removeUserFromGame(parsedRoomId, userIndex);
+      await redisController.removeUserFromRoom(parsedRoomId, userIndex);
       await socket.leave(parsedRoomId);
       await socket.leave(parsedUserId);
 
@@ -148,24 +148,26 @@ const gameService = (io: Server, socket: Socket) => {
     userId: string,
     callback: (result: string) => void,
   ) => {
+    logger.debug('[gameService] doubt action triggered');
     let parsedRoomId = '';
     let parsedUserId = '';
     try {
       parsedRoomId = parseId(roomId);
       parsedUserId = parseId(userId);
-    }catch {
-      console.error('ERROR: ', e);
+    }catch (e){
+      logger.error(e);
       callback('ERR');
       return;
     }
     try{
-
       try{
         const status = await redisController.getStatus(parsedRoomId);
+        logger.child({status: status}).debug('[gameService] doubt');
         if(status !== 'IDLE' && status !== 'WAITING_DOUBT') throw new Error(`Cant doubt. Game status:  ${status}`);
+        logger.debug('[gameService] doubt: setting status to \'RESOLVING_DOUBT\'');
         await redisController.setStatus(parsedRoomId, 'RESOLVING_DOUBT');
       }catch(e){
-        console.error('ERROR: ', e);
+        logger.error(e);
         callback('ERR');
         return;
       }
@@ -201,7 +203,12 @@ const gameService = (io: Server, socket: Socket) => {
       const users = await redisController.getUsersInAGame(parsedRoomId);
       const loserIndex = helpers.getIndexInUsersArray(loserId, users);
       await redisController.appendUserHand(parsedRoomId, loserIndex, playDeck);
+
+      //clear playdeck, lastPlay and statementHistory
       await redisController.clearPlayDeck(parsedRoomId);
+      await redisController.clearLastPlay(parsedRoomId);
+      await redisController.clearStatementHistory(parsedRoomId);
+
 
       //After a while send handUpdate to loser and send playDeck update and turn update to everyone
       const updatedUsers = await redisController.getUsersInAGame(parsedRoomId);
@@ -238,7 +245,6 @@ const gameService = (io: Server, socket: Socket) => {
           });
       }, 5000);
 
-      await redisController.clearLastPlay(parsedRoomId);
       callback('OK');
     }catch(e) {
       callback('ERROR: ');
@@ -246,9 +252,10 @@ const gameService = (io: Server, socket: Socket) => {
       return;
     }
     try{
+      logger.debug('[gameService] doubt: setting status to \'IDLE\'');
       await redisController.setStatus(parsedRoomId, 'IDLE');
     }catch(e){
-      console.error('ERROR: ', e);
+      logger.error(e);
     }
   };
 
@@ -256,7 +263,7 @@ const gameService = (io: Server, socket: Socket) => {
   const play = async (
     roomId: string,
     userId: string,
-    cards: Card[],
+    cards: Array<Card>,
     statement: Statement,
     callback: (result: string) => void,
   ) => {
@@ -265,10 +272,11 @@ const gameService = (io: Server, socket: Socket) => {
 
     //try parsing
     try {
+      logger.debug('[gameService] play');
       parsedRoomId = parseId(roomId);
       parsedUserId = parseId(userId);
     }catch(e) {
-      console.error('ERROR: ', e);
+      logger.error(e);
       callback('ERR');
       return;
     }
@@ -279,11 +287,13 @@ const gameService = (io: Server, socket: Socket) => {
       //If play status is not IDLE, play action can not be resolved
       try {
         const status = await redisController.getStatus(parsedRoomId);
+        logger.child({status: status}).debug('[gameService] play');
         if (status !== 'IDLE') throw new Error('Status not IDLE, cant resolve play action');
+        logger.debug('[gameService] play: setting status to PLAYING');
         await redisController.setStatus(parsedRoomId, 'PLAYING');
       }catch(e){
         callback('ERR');
-        console.log(e);
+        logger.error(e);
         return;
       }
 
@@ -352,14 +362,18 @@ const gameService = (io: Server, socket: Socket) => {
 
       //If played card is stated to be ace or 10, or there are 4 same cards on play, play stops for a while to wait doubts and then the playDeck is cleared
       if (statement.value === 1 || statement.value === 10 || gameStateUpdate.sameCardsInPlay >= 4) {
-        await deckAboutToClear(parsedRoomId);
+        await handleClearing(parsedRoomId);
         callback('OK');
+        logger.debug('[gameService] play: deck cleared, exiting play function');
+        logger.debug('[gameService] play: setting status to IDLE');
+        await redisController.setStatus(parsedRoomId, 'IDLE');
         return;
       }
 
       //If played card is not stated to be ace or 10 play goes on normally
 
       //Advance turn
+      logger.debug('[gameService] play: advancing turn');
       const nextTurn = helpers.getNextTurnId(users, playerIndex, updatedGameState.winners);
       await redisController.setTurn(roomId, nextTurn);
       //Send turn update to clients
@@ -367,27 +381,35 @@ const gameService = (io: Server, socket: Socket) => {
       callback('OK');
     } catch (e) {
       callback('ERR');
-      console.error('Error in play action: ', e);
+      logger.error(e);
     }
 
     //setting status back to IDLE
     try{
+      logger.debug('[gameService] play: Setting status to IDLE');
       await redisController.setStatus(parsedRoomId, 'IDLE');
     }catch(e){
-      console.error('ERROR: ', e);
+      logger.error(e);
     }
   };
 
-  const deckAboutToClear = async (roomId: string) =>{
+  const handleClearing = async (roomId: string) =>{
+    logger.debug('[gameService] deckAboutToClear');
 
     io.to(roomId).emit(SocketEvents.ABOUT_TO_CLEAR);
+
+    logger.debug('[gameService] deckAboutToClear: setting status to WAITING_DOUBT');
     await redisController.setStatus(roomId, 'WAITING_DOUBT');
+    logger.debug('[gameService] deckAboutToClear: starting timeout');
     await timeout(8000);
+    logger.debug('[gameService] deckAboutToClear: timeout over');
 
     const status = await redisController.getStatus(roomId);
+    logger.child({status: status}).debug('[gameService] deckAboutToClear');
 
-    //If someone has doubted the play action is stopped
+    //If someone has doubted, the play action is stopped
     if(status === 'WAITING_DOUBT') {
+      logger.debug('[gameService] deckAboutToClear: setting status to CLEARING');
       await redisController.setStatus(roomId, 'CLEARING');
 
       await redisController.clearPlayDeck(roomId);
@@ -403,7 +425,6 @@ const gameService = (io: Server, socket: Socket) => {
         io.to(roomId).emit(SocketEvents.TURN_UPDATE, nextTurn);
       }
     }
-    await redisController.setStatus(roomId, 'IDLE');
   };
 
   socket.on(SocketEvents.CREATE_ROOM, createRoom);

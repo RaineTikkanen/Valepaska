@@ -54,8 +54,8 @@ export default defineConfig([
       '@stylistic/no-multi-spaces': ['error'],
       '@stylistic/semi': ['error'],
       '@typescript-eslint/no-unsafe-assignment': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
-      
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/array-type': ['error', {default: 'generic'}],
     },
   },
   {

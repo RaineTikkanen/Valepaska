@@ -8,7 +8,7 @@ import { startGame } from '../Game/gameSlice.js';
 import { isString } from '../../utils/typeGuards.js';
 import { BACKEND_URL } from '../../utils/config.js';
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
-
+import logger from '../../utils/logger';
 
 
 
@@ -41,7 +41,8 @@ const Lobby = () => {
       setUserId(userId);
       localStorage.setItem('userId', userId);
     } catch (e) {
-      console.error(e);
+      if(e && typeof e === 'object') logger.error('ERROR: ', e);
+      else logger.error('UNKNOWN ERROR');
     }
   };
 

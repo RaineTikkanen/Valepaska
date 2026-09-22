@@ -3,7 +3,7 @@ import type { Card } from './deck.type.js';
 const suits = ['C', 'D', 'H', 'S'] as const;
 const values = Array.from({ length: 13 }, (_, index) => index + 1);
 
-const createDeck = (): Card[] =>
+const createDeck = (): Array<Card> =>
   suits.flatMap((suit) => values.map((value) => ({
     name: `${suit}${value}` as Card['name'],
     suit,
@@ -11,9 +11,9 @@ const createDeck = (): Card[] =>
   } as Card)));
 
 
-const deck: Card[] = createDeck();
+const deck: Array<Card> = createDeck();
 
-const getShuffledDeck = (): Card[] => {
+const getShuffledDeck = (): Array<Card> => {
   const newDeck = deck;
 
   for (let i = newDeck.length - 1; i > 0; i--) {

@@ -49,7 +49,7 @@ socket.on(SocketEvents.DISCONNECT, () => {
   if (storeRef) storeRef.dispatch(disconnected());
 });
 
-socket.on(SocketEvents.ROOM_UPDATE, (roomId: string, users: string[]) => {
+socket.on(SocketEvents.ROOM_UPDATE, (roomId: string, users: Array<string>) => {
   if (storeRef) {
     storeRef.dispatch(updateRoomId({roomId: roomId}));
     storeRef.dispatch(updateUsers({users: users}));
@@ -60,7 +60,7 @@ socket.on(SocketEvents.GAME_STARTS, ()=>{
   if (storeRef) storeRef.dispatch(gameStarted());
 });
 
-socket.on(SocketEvents.HAND_UPDATE, (cards: Card[])=>{
+socket.on(SocketEvents.HAND_UPDATE, (cards: Array<Card>)=>{
   if (storeRef) storeRef.dispatch(setCards(cards));
 });
 
@@ -92,7 +92,7 @@ socket.on(SocketEvents.DOUBTED, (doubter: string)=>{
   }
 });
 
-socket.on(SocketEvents.DOUBT_RESULT, (cards: Card[])=>{
+socket.on(SocketEvents.DOUBT_RESULT, (cards: Array<Card>)=>{
   const store = storeRef;
   if(store){
     store.dispatch(clearDoubter());

@@ -6,7 +6,7 @@ import type { RootState } from '../../store';
 export interface SocketState {
   isConnected: boolean;
   roomId: string;
-  users: string[];
+  users: Array<string>;
 }
 
 const initialState: SocketState = {
@@ -44,7 +44,7 @@ export const socketSlice = createSlice({
     updateRoomId: (state, action: PayloadAction<{roomId: string}>) => {
       state.roomId = action.payload.roomId;
     },
-    updateUsers: (state, action: PayloadAction<{users: string[]}>) => {
+    updateUsers: (state, action: PayloadAction<{users: Array<string>}>) => {
       state.users = action.payload.users;
     },
   }
