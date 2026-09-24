@@ -41,16 +41,18 @@ const getIndexInUsersArray = (userId: string, users: Array<User>): number=> {
  * @param {string[]} winners array of Ids from users that are finished
  * @returns {string} next player id
  */
-const getNextTurnId = (users: Array<User>, turnIndex: number, winners: Array<string>): string => {
-  const remainingUsers = users.filter(u => !winners.includes(u.id));
-
-  if(remainingUsers.length-1 === turnIndex){
-    turnIndex = 0;
-  }else{
-    turnIndex++;
-  }
-
-  return remainingUsers[turnIndex].id;
+const getNextTurnId = (users: Array<User>, turn: string, winners: Array<string>): string => {
+  let index = getIndexInUsersArray(turn, users);
+  let userId = turn;
+  do {
+    if (users.length - 1 === index) {
+      index = 0;
+    } else {
+      index++;
+    }
+    userId = users[index].id;
+  }while (winners.includes(userId));
+  return userId;
 };
 
 
@@ -65,10 +67,10 @@ const removeCardsFromCardsArray = (cardsToRemove: Array<Card>, arrayToRemoveFrom
 
   for (const cardToRemove of cardsToRemove) {
     const cardIndex = remainingArray.findIndex(
-      card => JSON.stringify(card) === JSON.stringify(cardToRemove)
+      card => card.name === cardToRemove.name
     );
-
-    if (cardIndex !== -1) remainingArray.splice(cardIndex, 1);
+    if (cardIndex === -1) throw new Error('Card not found in array');
+    remainingArray.splice(cardIndex, 1);
   }
 
   return remainingArray;

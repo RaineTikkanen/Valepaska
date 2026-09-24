@@ -63,6 +63,6 @@ export const {
   updateUsers,
 } = socketSlice.actions;
 
-export const selectIsConnected = (state: RootState) => state.socket.isConnected;
+export const selectSocketState = (state: RootState) => state.socket;
 
 export default socketSlice.reducer;

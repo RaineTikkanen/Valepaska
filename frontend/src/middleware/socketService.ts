@@ -22,10 +22,8 @@ import {
   gameStarted,
   startGame,
   setTurn,
+  updateGameState,
   resetGame,
-  setLastPlay,
-  setAmountOfCardsInPlay,
-  setSameCardsInPlay,
   setDoubter,
   clearDoubter,
   setDoubtResult,
@@ -66,9 +64,7 @@ socket.on(SocketEvents.HAND_UPDATE, (cards: Array<Card>)=>{
 
 socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   if(storeRef){
-    storeRef.dispatch(setLastPlay(gameState.lastPlay));
-    storeRef.dispatch(setAmountOfCardsInPlay(gameState.amountOfCardsInPlay));
-    storeRef.dispatch(setSameCardsInPlay(gameState.sameCardsInPlay));
+    storeRef.dispatch(updateGameState(gameState));
   }
 });
 

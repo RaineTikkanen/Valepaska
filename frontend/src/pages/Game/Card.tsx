@@ -1,19 +1,21 @@
 import cardImages from '../../assets/cardImages';
 import type { Card } from '../../types/game.js';
-import {useAppSelector, useAppDispatch} from '../../hooks/redux';
-import { toggleCardSelectState, selectSelectedCards } from './handSlice';
+import {useAppDispatch} from '../../hooks/redux';
+import { toggleCardSelectState } from './handSlice';
 
-function CardComponent({ card }: { card: Card }) {
-  const selectedCards = useAppSelector(selectSelectedCards);
+interface Props {
+  card: Card;
+  selected: boolean;
+  disabled: boolean;
+}
 
+function CardComponent(props: Props) {
+  const card = props.card;
 
   const dispatch=useAppDispatch();
 
-  const cantSelect = (selectedCards.length>3 && !selectedCards.includes(card));
-
-
-  const onClick = (card: Card) => {
-    if(cantSelect) return;
+  const onClick = () => {
+    if(props.disabled) return;
     dispatch(toggleCardSelectState(card));
   };
   const cardName = card.name;
@@ -21,8 +23,8 @@ function CardComponent({ card }: { card: Card }) {
   return (
     <div
       key={cardName} 
-      className={` max-w-35 min-w-35 transition-all ${cantSelect? 'cursor-not-allowed':'hover:cursor-pointer' } ${selectedCards.includes(card) ? '-mt-6' : ''}`}
-      onClick={() => onClick(card)}
+      className={` max-w-35 min-w-35 transition-all ${props.disabled ? 'cursor-not-allowed':'hover:cursor-pointer' } ${props.selected ? '-mt-6' : ''}`}
+      onClick={() => onClick()}
     >
       <img
         src={cardImages[cardName]}

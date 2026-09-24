@@ -1,8 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { Play, Card} from '../../types/game.js';
+import type {Play, Card, GameStateUpdate} from '../../types/game.js';
+import type {RootState} from '../../store.ts';
 
 export interface GameState {
+  winners: Array<string>;
   isActive: boolean;
   turn: string;
   lastPlay: Play;
@@ -14,6 +16,7 @@ export interface GameState {
 }
 
 const initialState: GameState = {
+  winners: [],
   isActive: false,
   turn: '',
   lastPlay: {
@@ -44,14 +47,11 @@ export const gameSlice = createSlice({
     setTurn: (state, action: PayloadAction<string>) => {
       state.turn = action.payload;
     },
-    setLastPlay: (state, action: PayloadAction<Play>) =>{
-      state.lastPlay = action.payload;
-    },
-    setAmountOfCardsInPlay: (state, action: PayloadAction<number>)=>{
-      state.amountOfCardsInPlay = action.payload;
-    },
-    setSameCardsInPlay: (state, action: PayloadAction<number>)=>{
-      state.sameCardsInPlay = action.payload;
+    updateGameState: (state, action: PayloadAction<GameStateUpdate>) => {
+      state.lastPlay = action.payload.lastPlay;
+      state.winners = action.payload.winners;
+      state.sameCardsInPlay = action.payload.sameCardsInPlay;
+      state.amountOfCardsInPlay = action.payload.amountOfCardsInPlay;
     },
     setDoubter: (state, action: PayloadAction<string>) =>{
       state.doubter = action.payload;
@@ -75,15 +75,16 @@ export const {
   startGame,
   gameStarted,
   resetGame,
+  updateGameState,
   setTurn,
-  setLastPlay,
-  setAmountOfCardsInPlay,
-  setSameCardsInPlay,
   setDoubter,
   clearDoubter,
   setDoubtResult,
   clearDoubtResult,
   setAboutToClear,
 } = gameSlice.actions;
+
+export const selectGameState = (state: RootState) => state.game;
+export const selectIsActive = (state: RootState) => state.game.isActive;
 
 export default gameSlice.reducer;

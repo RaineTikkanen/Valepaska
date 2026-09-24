@@ -4,12 +4,32 @@ import cardBack from '../../assets/cardBack.svg';
 import Timer from '../../components/Timer';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { setAboutToClear } from './gameSlice.js';
+import type {Card} from '../../types/game.ts';
+import { selectGameState } from './gameSlice.js';
 
-
+const DoubtResultView = ({doubtWasCorrect, doubtResult}:{doubtWasCorrect: boolean, doubtResult: Array<Card>} ) =>{
+  return (
+    <div className="absolute inset-x-0 top-0 z-10 flex justify-center">
+      <div className="rounded-xl bg-amber-500 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
+        <p>{doubtWasCorrect ? 'Epäily oli oikein!' : 'Epäily oli väärä!'}</p>
+        <div className="mt-3 flex max-w-[90vw] flex-wrap justify-center gap-2">
+          {doubtResult.map((card) => (
+            <img
+              key={card.name}
+              src={cardImages[card.name]}
+              alt={`${card.suit}${card.value}`}
+              className="h-24 w-auto shadow-md"
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const LastPlayView = () => {
 
-  const game = useAppSelector((state)=> state.game);
+  const game = useAppSelector(selectGameState);
   const dispatch = useAppDispatch();
 
 
@@ -23,9 +43,6 @@ const LastPlayView = () => {
 
   const showAceTimer = game.aboutToClear;
 
-  console.log('doubtResult: ', game.doubtResult);
-  console.log('showAceTimer: ', showAceTimer);
-
   return (
     <div className="relative">
       {game.doubter !== '' && (
@@ -35,23 +52,12 @@ const LastPlayView = () => {
           </div>
         </div>
       )}
-      {game.doubtResult !== null && (
-        <div className="absolute inset-x-0 top-0 z-10 flex justify-center">
-          <div className="rounded-xl bg-amber-500 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
-            <p>{doubtWasCorrect ? 'Epäily oli oikein!' : 'Epäily oli väärä!'}</p>
-            <div className="mt-3 flex max-w-[90vw] flex-wrap justify-center gap-2">
-              {game.doubtResult.map((card) => (
-                <img
-                  key={card.name}
-                  src={cardImages[card.name]}
-                  alt={`${card.suit}${card.value}`}
-                  className="h-24 w-auto shadow-md"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {game.doubtResult !== null &&
+          <DoubtResultView
+            doubtWasCorrect={doubtWasCorrect}
+            doubtResult={game.doubtResult}
+          />
+      }
       {showAceTimer && (
         <div className="absolute inset-x-0 top-0 z-10 flex flex-row justify-center">
           <div className="rounded-xl bg-blue-600 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">

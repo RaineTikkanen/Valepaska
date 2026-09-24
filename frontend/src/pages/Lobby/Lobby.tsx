@@ -3,8 +3,8 @@ import Button from '../../components/Button';
 import { useNavigate } from 'react-router';
 import useField from '../../hooks/useField';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { connect, createRoom, joinRoom, leaveRoom } from './socketSlice.js';
-import { startGame } from '../Game/gameSlice.js';
+import { connect, createRoom, joinRoom, leaveRoom, selectSocketState } from './socketSlice.js';
+import { startGame, selectIsActive } from '../Game/gameSlice.js';
 import { isString } from '../../utils/typeGuards.js';
 import { BACKEND_URL } from '../../utils/config.js';
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
@@ -25,8 +25,8 @@ const Lobby = () => {
   const inputGameId = useField('text', 'Game ID');
   const navigate = useNavigate();
 
-  const socket = useAppSelector((state) => state.socket);
-  const game = useAppSelector((state) => state.game);
+  const socket = useAppSelector(selectSocketState);
+  const gameIsActive = useAppSelector(selectIsActive);
   const dispatch = useAppDispatch();
 
 
@@ -62,10 +62,10 @@ const Lobby = () => {
   }, []);
 
   useEffect(() => {
-    if (game.isActive) {
+    if (gameIsActive) {
       void navigate('/game');
     }
-  }, [game]);
+  }, [gameIsActive]);
 
 
 

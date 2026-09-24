@@ -7,6 +7,7 @@ import { parseStatus } from './controller.type.js';
 import type {Statement} from '../services/gameService.type.js';
 import { parseCard } from '../deck/deck.type.js';
 import logger from '../utils/logger.js';
+import {isString} from '../utils/utils.js';
 
 
 
@@ -246,7 +247,7 @@ const getUsersInAGame = async (roomId: string): Promise<Array<User>> => {
 
 /**
  * Adds number of cards to a users hand
- * @param roomId 
+ * @param roomId
  * @param index user index in users array
  * @param cards cards to add to hand
  */
@@ -403,10 +404,24 @@ const appendToWinners = async (roomId: string, userId: string) => {
   );
 };
 
+const getWinners = async (roomId: string) => {
+  const result = await client.json.get(
+    roomId,
+    {path: '.winners'},
+  );
+
+  if(!result || !Array.isArray(result)) throw new Error('Error getWinners');
+
+  return result.map(u => {
+    if(!isString(u)) throw new Error('Error getWinners');
+    return u;
+  });
+};
+
 
 
 export default{
-  getGameState, 
+  getGameState,
   getLastPlay,
   setLastPlay,
   clearLastPlay,
@@ -429,6 +444,7 @@ export default{
   appendUserHand,
   dealCardsFromDeck,
   appendToWinners,
+  getWinners,
   getStatus,
   setStatus,
 };
