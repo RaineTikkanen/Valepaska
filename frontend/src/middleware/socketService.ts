@@ -20,6 +20,7 @@ import {
 
 import {
   gameStarted,
+  gameFinished,
   startGame,
   setTurn,
   updateGameState,
@@ -96,7 +97,13 @@ socket.on(SocketEvents.DOUBT_RESULT, (cards: Array<Card>)=>{
 
     setTimeout(()=>{
       store.dispatch(clearDoubtResult());
-    },3000);
+    },5000);
+  }
+});
+
+socket.on(SocketEvents.GAME_ENDS, ()=> {
+  if(storeRef){
+    storeRef.dispatch(gameFinished());
   }
 });
 
@@ -154,69 +161,48 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
         }
 
         case leaveRoom.type: {
-
-          const userId = localStorage.getItem('userId');
-          const roomId = store.getState().socket.roomId;
-
-
-          if (userId && roomId && isString(roomId)){
-            socket.emit(SocketEvents.LEAVE_ROOM, roomId, userId, (result)=>{
-              store.dispatch(resetGame());
-              if (result === 'ERR') {
-                window.alert('Failed to leave room');
-              }
-            });
-          }else window.alert('Failed to leave room. No userId or roomId');
+          socket.emit(SocketEvents.LEAVE_ROOM, (result)=> {
+            store.dispatch(resetGame());
+            if (result === 'ERR') {
+              window.alert('Failed to leave room');
+            }
+          });
           break;
         }
         
         case startGame.type: {
-          const roomId = store.getState().socket.roomId;
-          if(roomId){
-            socket.emit(SocketEvents.START_GAME, roomId, (result)=>{
-              if (result === 'ERR') {
-                window.alert('Failed to start game');
-              }
-            });
-          }else window.alert('Failed to start game. Cannot find gameId from store');
+          socket.emit(SocketEvents.START_GAME, (result)=> {
+            if (result === 'ERR') {
+              window.alert('Failed to start game');
+            }
+          });
           break;
         }
 
         case playCards.type: {
-          const userId = localStorage.getItem('userId');
-          const roomId = store.getState().socket.roomId;
-
           if (!isStatement(payload)) {
             window.alert('Invalid statement');
             break;
           }
-
           const statement = payload;
-
           const cards = store.getState().hand.selectedCards;
-          if(userId){
-            socket.emit(SocketEvents.PLAY, roomId, userId, cards, statement, (result)=>{
-              console.log(result);
-              if (result == 'OK') {
-                store.dispatch(removeCards(cards));
-              }else window.alert('Failed to play cards');
 
-            });
-          }
+          socket.emit(SocketEvents.PLAY, cards, statement, (result)=> {
+            console.log(result);
+            if (result == 'OK') {
+              store.dispatch(removeCards(cards));
+            } else window.alert('Failed to play cards');
+
+          });
           break;  
         }
 
         case doubt.type: {
-          const userId = localStorage.getItem('userId');
-          const roomId = store.getState().socket.roomId;
-
-          if(userId){
-            socket.emit(SocketEvents.DOUBT, roomId, userId, (result)=>{
-              if(result === 'ERR'){
-                console.log('Failed to doubt');
-              }
-            });
-          }
+          socket.emit(SocketEvents.DOUBT, (result)=> {
+            if (result === 'ERR') {
+              console.log('Failed to doubt');
+            }
+          });
         }
       }
     }

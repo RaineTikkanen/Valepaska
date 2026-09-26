@@ -18,6 +18,7 @@ export const SocketEvents = {
   DOUBTED: 'doubted',
   DOUBT_RESULT: 'doubtResult',
   ABOUT_TO_CLEAR: 'aboutToClear',
+  GAME_ENDS: 'gameEnds',
 
   //ClientToServer
   CREATE_ROOM: 'createRoom',
@@ -31,15 +32,15 @@ export const SocketEvents = {
 export interface ClientToServerEvents {
   createRoom: (userId: string, callback: (result: string) => void) => void;
   joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
-  startGame: (roomId: string, callback: (result: string) => void) => void; 
-  leaveRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
-  play: (roomId: string, userId: string, cards: Array<Card>, statement: Statement, callback: (result: string)=> void)=>void;
-  doubt: (roomId: string, userId: string, callback: (result: string)=>void)=>void;
+  startGame: (callback: (result: string) => void) => void;
+  leaveRoom: (callback: (result: string) => void) => void;
+  play: (cards: Array<Card>, statement: Statement, callback: (result: string)=> void)=>void;
+  doubt: (callback: (result: string)=>void)=>void;
 }
 
 
 export interface ServerToClientEvents {
-  gameStarts: () => void; 
+  gameStarts: () => void;
   roomUpdate: (roomId: string, players: Array<string>) => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   turnUpdate:(turn: string)=>void;
@@ -47,8 +48,14 @@ export interface ServerToClientEvents {
   doubted: (userId: string) => void;
   doubtResult: (cards: Array<Card>) => void;
   aboutToClear: ()=>void;
-  
+  gameEnds: () => void;
 }
+
+export interface SocketData {
+  userId: string;
+  roomId: string;
+}
+
 
 export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(WEBSOCKET_URL, {
   autoConnect: false,

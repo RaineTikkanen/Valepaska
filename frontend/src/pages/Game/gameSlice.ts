@@ -5,7 +5,7 @@ import type {RootState} from '../../store.ts';
 
 export interface GameState {
   winners: Array<string>;
-  isActive: boolean;
+  status: 'LOBBY' | 'ACTIVE' | 'FINISHED';
   turn: string;
   lastPlay: Play;
   amountOfCardsInPlay: number;
@@ -17,7 +17,7 @@ export interface GameState {
 
 const initialState: GameState = {
   winners: [],
-  isActive: false,
+  status: 'LOBBY',
   turn: '',
   lastPlay: {
     user: '',
@@ -41,7 +41,10 @@ export const gameSlice = createSlice({
       return;
     },
     gameStarted: (state) => {
-      state.isActive = true;
+      state.status = 'ACTIVE';
+    },
+    gameFinished: (state) => {
+      state.status = 'FINISHED';
     },
     resetGame: () => initialState,
     setTurn: (state, action: PayloadAction<string>) => {
@@ -74,6 +77,7 @@ export const gameSlice = createSlice({
 export const {
   startGame,
   gameStarted,
+  gameFinished,
   resetGame,
   updateGameState,
   setTurn,
@@ -85,6 +89,7 @@ export const {
 } = gameSlice.actions;
 
 export const selectGameState = (state: RootState) => state.game;
-export const selectIsActive = (state: RootState) => state.game.isActive;
+export const selectStatus = (state: RootState) => state.game.status;
+export const selectWinners = (state: RootState) => state.game.winners;
 
 export default gameSlice.reducer;

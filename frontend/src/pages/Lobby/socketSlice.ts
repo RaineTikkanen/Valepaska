@@ -64,5 +64,6 @@ export const {
 } = socketSlice.actions;
 
 export const selectSocketState = (state: RootState) => state.socket;
+export const selectUsers = (state: RootState) => state.socket.users;
 
 export default socketSlice.reducer;

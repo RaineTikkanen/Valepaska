@@ -2,15 +2,15 @@ import Hand from './Hand';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
-import { leaveRoom } from '../Lobby/socketSlice.js';
+import {leaveRoom, selectUsers} from '../Lobby/socketSlice.js';
 import { useNavigate } from 'react-router';
 import PlayCardsModal from './PlayCardsModal';
 import LastPlayView from './LastPlayView.js';
 import { doubt } from './handSlice.js';
 import logger from '../../utils/logger.ts';
 import { selectSelectedCards } from './handSlice.js';
-import { selectGameState } from './gameSlice.ts';
-import { selectSocketState } from '../Lobby/socketSlice.js';
+import {resetGame, selectGameState} from './gameSlice.ts';
+
 
 const User = ({user, isActive, position}:{user:string, isActive:boolean, position?: number}) => {
   const positionColor =
@@ -35,10 +35,10 @@ const User = ({user, isActive, position}:{user:string, isActive:boolean, positio
 
 
 const UserList = ({ turn, winners }: { turn: string, winners: Array<string> }) => {
-  const socket = useAppSelector(selectSocketState);
+  const allUsers = useAppSelector(selectUsers);
   const user = localStorage.getItem('userId');
 
-  const users=socket.users.filter(u => u !== user);
+  const users=allUsers.filter(u => u !== user);
 
 
   return (
@@ -66,7 +66,8 @@ const Game = () => {
 
 
   const turn = game.turn;
-  const user =localStorage.getItem('userId');
+  const user = localStorage.getItem('userId');
+
 
   const isMyTurn = turn === user;
 
@@ -75,44 +76,56 @@ const Game = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  
+
+  const position = game.winners.findIndex(u => u === user);
+  console.log(position);
+
 
   const [modalOn, setModalOn] = useState(false);
 
   const toggleModal = () => {
     setModalOn(!modalOn);
   };
-  
 
-  useEffect(()=>{
-    if (!game.isActive) void navigate('/lobby');
-  }, []);
+
+  useEffect(() => {
+    if (game.status === 'LOBBY') void navigate('/lobby');
+    if (game.status === 'FINISHED') {
+      setTimeout(() => void navigate('/results'), 3000);
+    }
+  }, [game.status]);
 
 
   const onLeaveGame = () => {
-    if(window.confirm('Haluatko varmasti poistua pelistä?')){
+    if (window.confirm('Haluatko varmasti poistua pelistä?')) {
       dispatch(leaveRoom());
+      dispatch(resetGame());
       void navigate('/lobby');
     }
   };
 
   return (
     <div className="">
-      <PlayCardsModal 
-        modalOn={modalOn} 
-        toggleModal={toggleModal} 
+      <PlayCardsModal
+        modalOn={modalOn}
+        toggleModal={toggleModal}
         selectedCards={selectedCards}
         lastPlay={game.lastPlay}
       />
-      <Button 
-        text="Poistu pelistä" 
+      <Button
+        text="Poistu pelistä"
         onClick={onLeaveGame}
       />
       <UserList turn={turn} winners={game.winners} />
       <LastPlayView />
       <div className="absolute inset-x-0 bottom-0 flex flex-col">
         <div className="flex justify-center">
-          <Hand />
+          {position !== -1 ?
+            <div className="flex h-40 flex-col items-center justify-center">
+              <p>Sijoituksesi: {position + 1}</p>
+            </div>
+            :
+            <Hand />}
         </div>
         <div className="flex flex-row justify-center ">
           <Button

@@ -1,20 +1,20 @@
 
-export interface Play {
+export type Play = {
   user: string;
   statement: Statement
-}
+};
 
-export interface Statement {
+export type Statement = {
   value: number;
   amount: number;
-}
+};
 
-export interface GameStateUpdate {
+export type GameStateUpdate = {
   winners: Array<string>;
   lastPlay: Play;
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;
-}
+};
 
 export const parseStatement = (statement: unknown): Statement => {
   if(!statement
@@ -26,5 +26,4 @@ export const parseStatement = (statement: unknown): Statement => {
     throw new Error('Invalid statement');
   }
   return {value:statement.value, amount:statement.amount};
-
 };

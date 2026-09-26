@@ -304,6 +304,15 @@ const getGameState = async (roomId: string): Promise<GameState>=> {
   return result;
 };
 
+const setGameState = async (roomId: string, gameState: GameState) => {
+  const result = await client.json.set(
+    roomId,
+    '$',
+    gameState
+  );
+  if(result !== 'OK') throw new Error('Cant set game state');
+};
+
 
 const getLastPlay = async (roomId: string): Promise<Play> => {
   const lastPlay = await client.json.get(
@@ -340,7 +349,7 @@ const clearLastPlay = async (roomId: string) => {
     '$.lastPlay',
     {
       cards: [],
-      user: 0,
+      user: '',
       statement: {
         value: 0,
         amount: 0,
@@ -396,11 +405,11 @@ const clearStatementHistory = async (
   logger.debug('[redisController] clearStatementHistory');
 };
 
-const appendToWinners = async (roomId: string, userId: string) => {
-  await client.json.arrAppend(
+const setWinners = async (roomId: string, winners: Array<string>) => {
+  await client.json.set(
     roomId,
     '$.winners',
-    userId,
+    winners,
   );
 };
 
@@ -422,6 +431,7 @@ const getWinners = async (roomId: string) => {
 
 export default{
   getGameState,
+  setGameState,
   getLastPlay,
   setLastPlay,
   clearLastPlay,
@@ -443,7 +453,7 @@ export default{
   setUserHand,
   appendUserHand,
   dealCardsFromDeck,
-  appendToWinners,
+  setWinners,
   getWinners,
   getStatus,
   setStatus,

@@ -11,10 +11,8 @@ const createDeck = (): Array<Card> =>
   } as Card)));
 
 
-const deck: Array<Card> = createDeck();
-
 const getShuffledDeck = (): Array<Card> => {
-  const newDeck = deck;
+  const newDeck = createDeck();
 
   for (let i = newDeck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
