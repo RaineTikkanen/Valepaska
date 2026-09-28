@@ -2,35 +2,56 @@ import Hand from './Hand';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
-import { leaveGame } from './gameSlice.js';
+import {leaveRoom, selectUsers} from '../Lobby/socketSlice.js';
 import { useNavigate } from 'react-router';
 import PlayCardsModal from './PlayCardsModal';
+import LastPlayView from './LastPlayView.js';
+import { doubt } from './handSlice.js';
+import logger from '../../utils/logger.ts';
+import { selectSelectedCards } from './handSlice.js';
+import {resetGame, selectGameState} from './gameSlice.ts';
+import type {User} from '../../types/game.ts';
 
-const User = ({user, isActive}:{user:string, isActive:boolean}) => {
+
+const UserElement = ({user, isActive, position}:{user:string, isActive:boolean, position?: number}) => {
+  const positionColor =
+    position === 1 ? 'bg-yellow-500' :
+      position === 2 ? 'bg-gray-400' :
+        position === 3 ? 'bg-orange-700' :
+          '';
+
+
+
   return(
-    <div className={`flex justify-center rounded-4xl px-2 py-6 ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
-      <p>{user}</p>
+    <div className="flex flex-row items-center justify-center">
+      {(position == 1 || position == 2 || position == 3) &&
+          <div className={`mx-2 flex flex-col items-center justify-center rounded-4xl px-6 py-4 ${positionColor}`}>
+            <p>{position}</p>
+          </div>
+      }
+      <div className={`flex min-w-30 justify-center rounded-4xl px-2 py-6  ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
+        <p>{user}</p>
+      </div>
     </div>
   );
 };
 
 
-const UserList = ({ turn }: { turn: string }) => {
-  const socket = useAppSelector((state) => state.socket);
-  const user = localStorage.getItem('userId');
 
-  const users =socket.users.reduce((acc: string[], curr: string) => {
-    if (curr !== user) {
-      acc.push(curr);
-    }
-    return acc;
-  }, []
-  );
+const UserList = ({ turn, winners }: { turn: string, winners: Array<User> }) => {
+  const users = useAppSelector(selectUsers);
+
+  const userId = localStorage.getItem('userId');
 
   return (
     <div className="flex flex-row justify-center gap-5">
       {users.map((user) => (
-        <User key={user} user={user} isActive={turn === user} />
+        <UserElement
+          key={user.id}
+          user={user.id === userId ? 'Sinä' : user.name}
+          isActive={turn === user.id}
+          position={winners.findIndex(u => u.id === user.id)+1}
+        />
       ))}
     </div>
   );
@@ -38,65 +59,91 @@ const UserList = ({ turn }: { turn: string }) => {
 
 
 
+
 const Game = () => {
-  const game = useAppSelector((state)=> state.game);
-  const hand = useAppSelector((state) => state.hand);
-  console.log('hand:', hand);
+  const game = useAppSelector(selectGameState);
+  const selectedCards = useAppSelector(selectSelectedCards);
+
+  logger.debug('[Game] game: ', game);
+
 
   const turn = game.turn;
+  const userId = localStorage.getItem('userId');
 
-  const isMyTurn = turn === localStorage.getItem('userId');
-  
+
+  const isMyTurn = turn === userId;
+
+  const lastPlayIsAOr10 = game.lastPlay.statement.value === 1 || game.lastPlay.statement.value === 10;
+
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  const position = game.winners.findIndex(u => u.id === userId);
 
   const [modalOn, setModalOn] = useState(false);
 
   const toggleModal = () => {
     setModalOn(!modalOn);
   };
-  
 
-  useEffect(()=>{
-    if (!game.isActive) void navigate('/lobby');
-  }, []);
+
+  useEffect(() => {
+    if (game.status === 'LOBBY') void navigate('/lobby');
+    if (game.status === 'FINISHED') {
+      setTimeout(() => void navigate('/results'), 3000);
+    }
+  }, [game.status]);
 
 
   const onLeaveGame = () => {
-    if(window.confirm('Haluatko varmasti poistua pelistä?')){
-      dispatch(leaveGame());
+    if (window.confirm('Haluatko varmasti poistua pelistä?')) {
+      dispatch(leaveRoom());
+      dispatch(resetGame());
       void navigate('/lobby');
     }
   };
 
-  console.log('Game state:', game);
-
   return (
-    <div className="">
-      <PlayCardsModal 
-        modalOn={modalOn} 
-        toggleModal={toggleModal} 
-        selectedCards={hand.selectedCards} 
+    <div className="flex min-h-dvh flex-col justify-between">
+      <PlayCardsModal
+        modalOn={modalOn}
+        toggleModal={toggleModal}
+        selectedCards={selectedCards}
         lastPlay={game.lastPlay}
       />
-      <Button 
-        text="Poistu pelistä" 
-        onClick={onLeaveGame}
-      />
-      <UserList turn={turn} />
-      <div className="absolute inset-x-0 bottom-0 flex flex-col">
-        <div className="flex justify-center">
-          <Hand />
-        </div>
-        <div className="flex flex-row justify-center " />
+      <div>
         <Button
-          text="Pelaa kortit"
-          disabled={hand.selectedCards.length === 0 || isMyTurn === false}
-          onClick={() => {
-            toggleModal();
-          }}
+          text="Poistu pelistä"
+          onClick={onLeaveGame}
         />
+      </div>
+      <UserList turn={turn} winners={game.winners} />
+      <LastPlayView />
+      <div className="mt-auto flex flex-col">
+        <div className="flex justify-center">
+          {position !== -1 ?
+            <div className="flex h-40 flex-col items-center justify-center">
+              <p>Sijoituksesi: {position + 1}</p>
+            </div>
+            :
+            <Hand />}
+        </div>
+        <div className="flex flex-row justify-center ">
+          <Button
+            text="Epäile"
+            disabled={game.lastPlay.user.id === userId || !game.lastPlay.user.id}
+            onClick={() => {
+              dispatch(doubt());
+            }}
+          />
+          <Button
+            text="Pelaa"
+            disabled={selectedCards.length === 0 || !isMyTurn || lastPlayIsAOr10 || game.aboutToClear}
+            onClick={() => {
+              toggleModal();
+            }}
+          />
+        </div>
       </div>
     </div>
   );

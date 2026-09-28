@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
-import type { Card } from '../../types/game.js';
+import type { Card, Statement } from '../../types/game.js';
 
 export interface HandState {
   cards: Array<Card>;
@@ -30,10 +30,7 @@ export const handSlice = createSlice({
       state.cards = [];
       state.selectedCards = [];
     },
-    playCards: (state) => {
-      state.cards = state.cards.filter(
-        (card) => !state.selectedCards.some((c) => c.name === card.name),
-      );
+    playCards: (state, _action: PayloadAction<Statement>) => {
       state.selectedCards=[];
     },
     toggleCardSelectState: (state, action: PayloadAction<Card>) => {
@@ -50,6 +47,7 @@ export const handSlice = createSlice({
     clearSelectedCards: (state) => {
       state.selectedCards = [];
     },
+    doubt: () =>{},
   },
 });
 
@@ -59,7 +57,8 @@ export const {
   clearCards,
   playCards,
   toggleCardSelectState,
-  clearSelectedCards
+  clearSelectedCards,
+  doubt
 } = handSlice.actions;
 
 export const selectHandCards = (state: RootState) => state.hand.cards;

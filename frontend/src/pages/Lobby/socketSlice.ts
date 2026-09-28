@@ -1,12 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
+import type {User} from '../../types/game.ts';
 
 
 export interface SocketState {
   isConnected: boolean;
   roomId: string;
-  users: string[];
+  users: Array<User>;
 }
 
 const initialState: SocketState = {
@@ -30,6 +31,8 @@ export const socketSlice = createSlice({
     },
     disconnected: (state) => {
       state.isConnected = false;
+      state.roomId = '';
+      state.users = [];
     },
     createRoom: () => {
       return;
@@ -44,7 +47,7 @@ export const socketSlice = createSlice({
     updateRoomId: (state, action: PayloadAction<{roomId: string}>) => {
       state.roomId = action.payload.roomId;
     },
-    updateUsers: (state, action: PayloadAction<{users: string[]}>) => {
+    updateUsers: (state, action: PayloadAction<{users: Array<User>}>) => {
       state.users = action.payload.users;
     },
   }
@@ -63,6 +66,7 @@ export const {
   updateUsers,
 } = socketSlice.actions;
 
-export const selectIsConnected = (state: RootState) => state.socket.isConnected;
+export const selectSocketState = (state: RootState) => state.socket;
+export const selectUsers = (state: RootState) => state.socket.users;
 
 export default socketSlice.reducer;

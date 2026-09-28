@@ -34,22 +34,22 @@ import C10 from './cards/C10.svg';
 import D10 from './cards/D10.svg';
 import H10 from './cards/H10.svg';
 import S10 from './cards/S10.svg';
-import CJ from './cards/CJ.svg';
-import DJ from './cards/DJ.svg';
-import HJ from './cards/HJ.svg';
-import SJ from './cards/SJ.svg';
-import CQ from './cards/CQ.svg';
-import DQ from './cards/DQ.svg';
-import HQ from './cards/HQ.svg';
-import SQ from './cards/SQ.svg';
-import CK from './cards/CK.svg';
-import DK from './cards/DK.svg';
-import HK from './cards/HK.svg';
-import SK from './cards/SK.svg';
-import CA from './cards/CA.svg';
-import DA from './cards/DA.svg';
-import HA from './cards/HA.svg';
-import SA from './cards/SA.svg';
+import C11 from './cards/C11.svg';
+import D11 from './cards/D11.svg';
+import H11 from './cards/H11.svg';
+import S11 from './cards/S11.svg';
+import C12 from './cards/C12.svg';
+import D12 from './cards/D12.svg';
+import H12 from './cards/H12.svg';
+import S12 from './cards/S12.svg';
+import C13 from './cards/C13.svg';
+import D13 from './cards/D13.svg';
+import H13 from './cards/H13.svg';
+import S13 from './cards/S13.svg';
+import C1 from './cards/C1.svg';
+import D1 from './cards/D1.svg';
+import H1 from './cards/H1.svg';
+import S1 from './cards/S1.svg';
 
 const cardImages = {
   C2,
@@ -88,22 +88,22 @@ const cardImages = {
   D10,
   H10,
   S10,
-  CJ,
-  DJ,
-  HJ,
-  SJ,
-  CQ,
-  DQ,
-  HQ,
-  SQ,
-  CK,
-  DK,
-  HK,
-  SK,
-  CA,
-  DA,
-  HA,
-  SA,
+  C11,
+  D11,
+  H11,
+  S11,
+  C12,
+  D12,
+  H12,
+  S12,
+  C13,
+  D13,
+  H13,
+  S13,
+  C1,
+  D1,
+  H1,
+  S1,
 };
 
 export default cardImages;

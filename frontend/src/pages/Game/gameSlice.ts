@@ -1,17 +1,39 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { Play } from '../../types/game.js';
+import type {Play, Card, GameStateUpdate, User} from '../../types/game.js';
+import type {RootState} from '../../store.ts';
 
 export interface GameState {
-  isActive: boolean;
+  winners: Array<User>;
+  status: 'LOBBY' | 'ACTIVE' | 'FINISHED';
   turn: string;
-  lastPlay: Play | null;
+  lastPlay: Play;
+  amountOfCardsInPlay: number;
+  sameCardsInPlay: number;
+  doubter: string;
+  doubtResult: Array<Card> | null;
+  aboutToClear: boolean,
 }
 
 const initialState: GameState = {
-  isActive: false,
+  winners: [],
+  status: 'LOBBY',
   turn: '',
-  lastPlay: null,
+  lastPlay: {
+    user: {
+      name: '',
+      id: '',
+    },
+    statement:{
+      value: 0,
+      amount: 0,
+    }
+  },
+  doubter: '',
+  amountOfCardsInPlay: 0,
+  sameCardsInPlay: 0,
+  doubtResult: null,
+  aboutToClear: false,
 };
 
 export const gameSlice = createSlice({
@@ -22,21 +44,55 @@ export const gameSlice = createSlice({
       return;
     },
     gameStarted: (state) => {
-      state.isActive = true;
+      state.status = 'ACTIVE';
     },
-    leaveGame: () => initialState,
+    gameFinished: (state) => {
+      state.status = 'FINISHED';
+    },
+    resetGame: () => initialState,
     setTurn: (state, action: PayloadAction<string>) => {
       state.turn = action.payload;
     },
+    updateGameState: (state, action: PayloadAction<GameStateUpdate>) => {
+      state.lastPlay = action.payload.lastPlay;
+      state.winners = action.payload.winners;
+      state.sameCardsInPlay = action.payload.sameCardsInPlay;
+      state.amountOfCardsInPlay = action.payload.amountOfCardsInPlay;
+    },
+    setDoubter: (state, action: PayloadAction<string>) =>{
+      state.doubter = action.payload;
+    },
+    clearDoubter: (state)=>{
+      state.doubter = '';
+    },
+    setDoubtResult: (state, action: PayloadAction<Array<Card>>) =>{
+      state.doubtResult = action.payload;
+    },
+    clearDoubtResult: (state) =>{
+      state.doubtResult=null;
+    },
+    setAboutToClear: (state, action: PayloadAction<boolean>) =>{
+      state.aboutToClear=action.payload; 
+    }
   }
 });
-
 
 export const {
   startGame,
   gameStarted,
-  leaveGame,
+  gameFinished,
+  resetGame,
+  updateGameState,
   setTurn,
+  setDoubter,
+  clearDoubter,
+  setDoubtResult,
+  clearDoubtResult,
+  setAboutToClear,
 } = gameSlice.actions;
+
+export const selectGameState = (state: RootState) => state.game;
+export const selectStatus = (state: RootState) => state.game.status;
+export const selectWinners = (state: RootState) => state.game.winners;
 
 export default gameSlice.reducer;

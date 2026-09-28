@@ -1,37 +1,33 @@
 import cardImages from '../../assets/cardImages';
 import type { Card } from '../../types/game.js';
-import {useAppSelector, useAppDispatch} from '../../hooks/redux';
-import { toggleCardSelectState, selectSelectedCards } from './handSlice';
-import { useState, useEffect } from 'react';
+import {useAppDispatch} from '../../hooks/redux';
+import { toggleCardSelectState } from './handSlice';
 
-function CardComponent({ card }: { card: Card }) {
-  const [isSelected, setIsSelected] = useState(false);
-  const selectedCards = useAppSelector(selectSelectedCards);
+interface Props {
+  card: Card;
+  selected: boolean;
+  disabled: boolean;
+}
 
-
-  useEffect(()=>{
-    if (selectedCards.includes(card)){
-      setIsSelected(true);
-    }
-  },[]);
+function CardComponent(props: Props) {
+  const card = props.card;
 
   const dispatch=useAppDispatch();
 
-
-  const onClick = (card: Card) => {
+  const onClick = () => {
+    if(props.disabled) return;
     dispatch(toggleCardSelectState(card));
-    setIsSelected(!isSelected);
   };
-
+  const cardName = card.name;
 
   return (
     <div
-      key={card.name} 
-      className={` max-w-35 min-w-35 transition-all ${isSelected ? '-mt-6' : ''}`}
-      onClick={() => onClick(card)}
+      key={cardName} 
+      className={` max-w-35 min-w-25 transition-all ${props.disabled ? 'cursor-not-allowed':'hover:cursor-pointer' } ${props.selected ? '-translate-y-6' : ''}`}
+      onClick={() => onClick()}
     >
       <img
-        src={cardImages[card.name]}
+        src={cardImages[cardName]}
         alt="Card Image"
         className="shadow-md"
       />

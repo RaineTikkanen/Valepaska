@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 63 88">
+  <defs>
+    <pattern id="card-pattern" width="30" height="5.18" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
+      <path d="M 7.597,0.061 C 5.079,-0.187 2.656,0.302 -0.01,1.788 L -0.01,3.061 C 2.773,1.431 5.173,1.052 7.472,1.280 C 9.770,1.508 11.969,2.361 14.253,3.218 C 18.820,4.931 23.804,6.676 30.066,3.061 L 30.062,1.788 C 23.622,5.497 19.246,3.770 14.691,2.061 C 12.413,1.207 10.115,0.311 7.597,0.061 Z" fill="#fff" />
+    </pattern>
+  </defs>
+  <rect x="0.5" y="0.5" width="62" height="87" rx="3" fill="#f2f2f2" />
+  <rect x="4.5" y="4.5" width="54" height="79" fill="#04b885" />
+  <rect x="4.5" y="4.5" width="54" height="79" fill="url(#card-pattern)" />
+</svg>

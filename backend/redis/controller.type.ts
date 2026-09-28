@@ -1,27 +1,37 @@
-import { Card } from '../deck/deck.type.js';
+import type { Card } from '../deck/deck.type.js';
+import type {Statement, User} from '../services/gameService.type.js';
 
-export interface User {
-  id: string;
-  hand: Card[];
-}
+export type Player = {
+  user: User;
+  hand: Array<Card>;
+};
 
-export interface Play {
-  cards: Card[];
-  user: string;
-  statement: Statement
-}
+export type Play = {
+  cards: Array<Card>;
+  user: User;
+  statement: Statement;
+};
 
-export interface Statement {
-  value: number | null;
-  amount: number | null;
-  isTrue: boolean | null;
-}
+export type Status = 'IDLE' | 'PLAYING' | 'WAITING_DOUBT' | 'RESOLVING_DOUBT' | 'CLEARING';
 
-export interface GameState {
+export type GameState = {
+  winners: Array<User>;
+  status: Status
   isActive: boolean;
-  turnIndex: number | null;
-  deck: Card[];
-  playDeck: Card[];
-  users: User[];
-  lastPlay: Play | null;
-}
+  turn: string;
+  deck: Array<Card>;
+  playDeck: Array<Card>;
+  players: Array<Player>;
+  lastPlay: Play;
+  statementHistory: Statement
+};
+
+export const parseStatus = (status: unknown): Status =>{
+  if(status !== 'PLAYING'
+      && status !== 'WAITING_DOUBT'
+      && status !== 'RESOLVING_DOUBT'
+      && status !== 'CLEARING'
+      && status !== 'IDLE'
+  ) throw new Error('Invalid status');
+  return status;
+};

@@ -1,61 +1,9 @@
-
-type CardName =
-  | 'C2'
-  | 'D2'
-  | 'H2'
-  | 'S2'
-  | 'C3'
-  | 'D3'
-  | 'H3'
-  | 'S3'
-  | 'C4'
-  | 'D4'
-  | 'H4'
-  | 'S4'
-  | 'C5'
-  | 'D5'
-  | 'H5'
-  | 'S5'
-  | 'C6'
-  | 'D6'
-  | 'H6'
-  | 'S6'
-  | 'C7'
-  | 'D7'
-  | 'H7'
-  | 'S7'
-  | 'C8'
-  | 'D8'
-  | 'H8'
-  | 'S8'
-  | 'C9'
-  | 'D9'
-  | 'H9'
-  | 'S9'
-  | 'C10'
-  | 'D10'
-  | 'H10'
-  | 'S10'
-  | 'CJ'
-  | 'DJ'
-  | 'HJ'
-  | 'SJ'
-  | 'CQ'
-  | 'DQ'
-  | 'HQ'
-  | 'SQ'
-  | 'CK'
-  | 'DK'
-  | 'HK'
-  | 'SK'
-  | 'CA'
-  | 'DA'
-  | 'HA'
-  | 'SA';
+import {isString} from '../utils/utils.js';
+type CardName = `${CardSuit}${CardValue}`;
 
 
-
-type CardSuit = 'C' | 'D' | 'H' | 'S';
+const CardSuits = ['C', 'D', 'H', 'S'] as const;
+type CardSuit = typeof CardSuits[number];
 
 type Card = {
   name: CardName;
@@ -64,7 +12,48 @@ type Card = {
 };
 
 
-type CardValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11| 12 | 13 ;
+const CardValues = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13] as const;
+type CardValue = typeof CardValues[number];
+
+export { CardValues, CardSuits };
+export type { Card, CardSuit, CardName, CardValue };
 
 
-export type { Card };
+
+export const parseCardValue = (valueToCheck: unknown): CardValue => {
+  const value = CardValues.find((v)=> v===valueToCheck);
+  if(!value) throw new Error('Card value parsing failed');
+  return value;
+};
+
+export const parseCardSuit = (suitToCheck: unknown): CardSuit => {
+  const suit = CardSuits.find((s) => s===suitToCheck);
+  if(!suit) throw new Error('Card suit parsing failed');
+  return suit;
+};
+
+export const parseCardName = (nameToCheck: unknown): CardName => {
+  if(!isString(nameToCheck)) throw new Error('Card name is not a string');
+  const suitString = nameToCheck.substring(0,1);
+  const valueString = nameToCheck.substring(1);
+
+  const suit = parseCardSuit(suitString);
+  const value = parseCardValue(parseInt(valueString));
+  return `${suit}${value}`;
+};
+
+export const parseCard = (card: unknown): Card => {
+  if(!card || typeof card !== 'object' || !('name' in card)
+      || !('value' in card) || !('suit' in card)) {
+    throw new Error('Error parsing card');
+  }
+
+  const value = parseCardValue(card.value);
+  const suit = parseCardSuit(card.suit);
+  const name = parseCardName(card.name);
+
+  const constructedName = `${suit}${value}`;
+  if(name!==constructedName) throw new Error('Name not matching suit and value');
+
+  return {value:value, suit:suit, name:name};
+};
