@@ -23,7 +23,7 @@ function CardComponent(props: Props) {
   return (
     <div
       key={cardName} 
-      className={` max-w-35 min-w-35 transition-all ${props.disabled ? 'cursor-not-allowed':'hover:cursor-pointer' } ${props.selected ? '-mt-6' : ''}`}
+      className={` max-w-35 min-w-25 transition-all ${props.disabled ? 'cursor-not-allowed':'hover:cursor-pointer' } ${props.selected ? '-translate-y-6' : ''}`}
       onClick={() => onClick()}
     >
       <img

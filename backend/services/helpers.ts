@@ -1,7 +1,8 @@
 import type { GameState } from '../redis/controller.type.js';
-import type { GameStateUpdate } from './gameService.type.js';
-import type { User } from '../redis/controller.type.js';
+import type {GameStateUpdate, User} from './gameService.type.js';
+import type { Player } from '../redis/controller.type.js';
 import type { Card } from '../deck/deck.type.js';
+import logger from '../utils/logger.js';
 
 /**
  * Returns GameStateUpdate from GameState
@@ -22,14 +23,25 @@ const createGameStateUpdateFromGameState = (gameState: GameState) => {
   return gameStateUpdate;
 };
 
+const updatePlayerHand = (players: Array<Player>, userId: string, newHand: Array<Card>) => {
+  return players.map(p => {
+    if(p.user.id === userId){
+      logger.debug(`userId: ${p.user.id}`);
+      logger.debug(`hand: ${JSON.stringify(p.hand)}`);
+      p.hand = newHand;
+    }
+    return p;
+  });
+}
+
 /**
 * Returns users index in users array
 * @param {string} userId id of user
 * @param {string[]} users array of all users
 * @returns {number} index position of userId in users array
 */
-const getIndexInUsersArray = (userId: string, users: Array<User>): number=> {
-  const index= users.findIndex(p => p.id === userId);
+const getIndexInUsersArray = (userId: string, users: Array<Player>): number=> {
+  const index= users.findIndex(p => p.user.id === userId);
   if(index===-1) throw new Error('Cant find user index');
   return index;
 };
@@ -41,7 +53,7 @@ const getIndexInUsersArray = (userId: string, users: Array<User>): number=> {
  * @param {string[]} winners array of Ids from users that are finished
  * @returns {string} next player id
  */
-const getNextTurnId = (users: Array<User>, turn: string, winners: Array<string>): string => {
+const getNextTurnId = (users: Array<Player>, turn: string, winners: Array<User>): string => {
   let index = getIndexInUsersArray(turn, users);
   let userId = turn;
   do {
@@ -50,11 +62,10 @@ const getNextTurnId = (users: Array<User>, turn: string, winners: Array<string>)
     } else {
       index++;
     }
-    userId = users[index].id;
-  }while (winners.includes(userId));
+    userId = users[index].user.id;
+  }while (winners.some(w => w.id === userId));
   return userId;
 };
-
 
 /**
  * Returns new array of cards from which given cards are removed from
@@ -81,4 +92,5 @@ export default {
   getIndexInUsersArray,
   getNextTurnId,
   removeCardsFromCardsArray,
+  updatePlayerHand,
 };

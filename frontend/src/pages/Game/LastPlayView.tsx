@@ -44,7 +44,7 @@ const LastPlayView = () => {
   const showAceTimer = game.aboutToClear;
 
   return (
-    <div className="relative">
+    <div className="relative flex w-full flex-1 flex-col justify-center">
       {game.doubter !== '' && (
         <div className="absolute inset-x-0 top-0 z-10 flex justify-center">
           <div className="rounded-xl bg-red-600 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
@@ -63,14 +63,14 @@ const LastPlayView = () => {
           <div className="rounded-xl bg-blue-600 px-6 py-4 text-center text-xl font-bold text-white shadow-lg">
             Pakka kaatuu
           </div>
-          <Timer 
-            duration={7} 
+          <Timer
+            duration={7}
             onComplete={()=>{dispatch(setAboutToClear(false));}}
           />
         </div>
       )}
-      
-      <div className="my-3 flex h-100 flex-col items-center justify-center"> 
+
+      <div className="my-3 flex min-h-0 flex-1 flex-col items-center justify-center">
         <p>Kortteja pöydässä: {game.amountOfCardsInPlay}</p>
         {game.sameCardsInPlay > 1 && <p>Samoja kortteja : {game.sameCardsInPlay}</p>}
         <img

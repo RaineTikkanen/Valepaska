@@ -15,7 +15,7 @@ interface ButtonProps {
 }
 
 const CardSelectButton = (props: ButtonProps) => {
-  const baseClass ='m-3 flex-1 rounded-xl p-3 duration-300 ';
+  const baseClass ='xl:m-3 m-1 flex-1 rounded-xl p-3 duration-300 ';
   const selectedClass = baseClass.concat('bg-green-500 hover:bg-green-400 hover:cursor-pointer');
   const defaultClass = baseClass.concat('bg-emerald-400 hover:bg-green-400 hover:cursor-pointer');
   const disabledClassName=baseClass.concat('bg-emerald-400/50 cursor-not-allowed');
@@ -84,7 +84,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
     <Modal show={props.modalOn} onClose={onClose} header="Pelaa kortit">
       <div className="flex flex-col">
         <label>{labelText}</label>
-        <div className="flex flex-row justify-center gap-2">
+        <div className="flex flex-row justify-center">
           {[3, 4, 5, 6, 7].map((value) => (
             <CardSelectButton
               key={value}
@@ -98,7 +98,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             />
           ))}
         </div>
-        <div className="flex flex-row justify-center gap-2">
+        <div className="flex flex-row justify-center">
           {[8, 9 ].map((value) => (
             <CardSelectButton
               key={value}
@@ -126,7 +126,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           ))}
 
         </div>
-        <div className="flex flex-row justify-center gap-2">
+        <div className="flex flex-row justify-center">
           <CardSelectButton
             value={10}
             disabled={selectedCardsCount > 1 || cantPlay10 || lastPlayIs2}

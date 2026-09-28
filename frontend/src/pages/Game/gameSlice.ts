@@ -1,10 +1,10 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type {Play, Card, GameStateUpdate} from '../../types/game.js';
+import type {Play, Card, GameStateUpdate, User} from '../../types/game.js';
 import type {RootState} from '../../store.ts';
 
 export interface GameState {
-  winners: Array<string>;
+  winners: Array<User>;
   status: 'LOBBY' | 'ACTIVE' | 'FINISHED';
   turn: string;
   lastPlay: Play;
@@ -20,7 +20,10 @@ const initialState: GameState = {
   status: 'LOBBY',
   turn: '',
   lastPlay: {
-    user: '',
+    user: {
+      name: '',
+      id: '',
+    },
     statement:{
       value: 0,
       amount: 0,

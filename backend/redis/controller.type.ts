@@ -1,27 +1,27 @@
 import type { Card } from '../deck/deck.type.js';
-import type { Statement } from '../services/gameService.type.js';
+import type {Statement, User} from '../services/gameService.type.js';
 
-export type User = {
-  id: string;
+export type Player = {
+  user: User;
   hand: Array<Card>;
 };
 
 export type Play = {
   cards: Array<Card>;
-  user: string;
+  user: User;
   statement: Statement;
 };
 
 export type Status = 'IDLE' | 'PLAYING' | 'WAITING_DOUBT' | 'RESOLVING_DOUBT' | 'CLEARING';
 
 export type GameState = {
-  winners: Array<string>;
+  winners: Array<User>;
   status: Status
   isActive: boolean;
   turn: string;
   deck: Array<Card>;
   playDeck: Array<Card>;
-  users: Array<User>;
+  players: Array<Player>;
   lastPlay: Play;
   statementHistory: Statement
 };

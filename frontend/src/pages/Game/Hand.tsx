@@ -10,7 +10,7 @@ const Hand = () => {
   logger.debug('[Hand] selectedCards: ', selectedCards);
 
   return (
-    <div className="flex h-60 flex-row overflow-scroll p-6 ease-in-out">
+    <div className="scrollbar-hidden flex max-h-60 min-h-40 flex-row overflow-x-auto overflow-y-hidden p-6 ease-in-out">
       {hand.map((card) => (
         <CardComponent
           key={card.name}

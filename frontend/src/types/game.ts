@@ -14,14 +14,14 @@ type CardValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11| 12 | 13 ;
 
 
 type GameStateUpdate = {
-  winners: Array<string>;
+  winners: Array<User>;
   lastPlay: Play;
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;
 };
 
 type Play = {
-  user: string,
+  user: User,
   statement: Statement,
 };
 
@@ -30,5 +30,10 @@ type Statement = {
   amount: number,
 };
 
+type User = {
+  name: string,
+  id: string,
+};
 
-export type { Card, GameStateUpdate, Play, Statement};
+
+export type { Card, GameStateUpdate, Play, Statement, User };

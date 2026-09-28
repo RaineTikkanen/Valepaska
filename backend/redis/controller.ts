@@ -2,12 +2,11 @@ import redis from 'redis';
 import { REDIS_URL } from '../utils/config.js';
 import getShuffledDeck from '../deck/deck.js';
 import type { Card } from '../deck/deck.type.js';
-import type {Play, User, GameState, Status} from './controller.type.js';
+import type {Play, Player, GameState, Status} from './controller.type.js';
 import { parseStatus } from './controller.type.js';
-import type {Statement} from '../services/gameService.type.js';
+import type {Statement, User} from '../services/gameService.type.js';
+import { parseUser } from '../services/gameService.type.js';
 import { parseCard } from '../deck/deck.type.js';
-import logger from '../utils/logger.js';
-import {isString} from '../utils/utils.js';
 
 
 
@@ -27,7 +26,7 @@ await client.connect();
 const createRoom = async (roomId: string ) => {
   const deck = getShuffledDeck();
   const result = await client.json.set(
-    roomId, 
+    roomId,
     '$',
     {
       winners: [],
@@ -36,7 +35,7 @@ const createRoom = async (roomId: string ) => {
       turn: null,
       deck: deck,
       playDeck: [],
-      users:[],
+      players:[],
       statementHistory: {
         value: 0,
         amount: 0,
@@ -82,14 +81,14 @@ const setStatus = async (roomId: string, status: Status) => {
 };
 
 /**
- * Removes a user from a room
+ * Removes a player from a room
  * @param {string} roomId Id of room
  * @param userIndex
  */
-const removeUserFromRoom = async (roomId: string, userIndex: number) => {
+const removePlayerFromRoom = async (roomId: string, userIndex: number) => {
   await client.json.del(
     roomId,
-    {path: `$.users[${userIndex}]`}
+    {path: `$.players[${userIndex}]`}
   );
 };
 
@@ -126,16 +125,14 @@ const setIsActive = async (roomId: string, isActive: boolean) => {
 /**
  * Function to add a user to a room.
  * @param {string} roomId Id of room
- * @param {string} userId Id of user to add
+ * @param {User} user user to add
  */
-const addUserToRoom = async (roomId: string, userId: string) => {
+const addUserToRoom = async (roomId: string, user: User ) => {
+
   await client.json.arrAppend(
     roomId,
-    '$.users',
-    {
-      id: userId,
-      hand: []
-    }
+    '$.players',
+    {user:user, hand: []}
   );
 };
 
@@ -161,7 +158,7 @@ const setTurn = async (roomId: string, turn: string) => {
  */
 const getTurn = async(roomId: string): Promise<string> => {
   const result = await client.json.get(
-    roomId, 
+    roomId,
     {path: '.turn'}
   );
 
@@ -211,15 +208,15 @@ const clearPlayDeck = async (roomId: string) => {
     '$.playDeck',
     []
   );
-  
+
   if(!result) throw new Error('Error clearing play deck');
 };
 
 
-const setUserHand = async (roomId: string, hand: Array<Card>, userIndex: number) => {
+const setPlayerHand = async (roomId: string, hand: Array<Card>, userIndex: number) => {
   const result = await client.json.set(
     roomId,
-    `$.users[${userIndex}].hand`,
+    `$.players[${userIndex}].hand`,
     hand
   );
   if(result !== 'OK') throw new Error('Failed to set user hand');
@@ -228,34 +225,34 @@ const setUserHand = async (roomId: string, hand: Array<Card>, userIndex: number)
 
 
 /**
- * Returns a users list in a game
- * @param roomId 
- * @returns 
+ * Returns a players list in a game
+ * @param roomId
+ * @returns
  */
-const getUsersInAGame = async (roomId: string): Promise<Array<User>> => {
-  const users = await client.json.get(
-    roomId, 
-    {path: '.users'}
-  ) as Array<User> | null;
+const getPlayersInAGame = async (roomId: string): Promise<Array<Player>> => {
+  const players = await client.json.get(
+    roomId,
+    {path: '.players'}
+  ) as Array<Player> | null;
 
-  if(users===null) throw new Error('Users not found');
+  if(players===null) throw new Error('Players not found');
 
-  return users;
+  return players;
 };
 
 
 
 /**
- * Adds number of cards to a users hand
+ * Adds number of cards to a player's hand
  * @param roomId
- * @param index user index in users array
+ * @param index user index in players array
  * @param cards cards to add to hand
  */
-const appendUserHand = async (roomId: string, index: number, cards: Array<Card>) => {
+const appendPlayerHand = async (roomId: string, index: number, cards: Array<Card>) => {
   for (const card of cards) {
     await client.json.arrAppend(
       roomId,
-      `$.users[${index}].hand`,
+      `$.players[${index}].hand`,
       card
     );
   }
@@ -326,11 +323,11 @@ const getLastPlay = async (roomId: string): Promise<Play> => {
 };
 
 const setLastPlay = async (roomId: string, play: Play) => {
-  const result = await client.json.set( 
-    roomId, 
-    '$.lastPlay', 
+  const result = await client.json.set(
+    roomId,
+    '$.lastPlay',
     {
-      cards: play.cards, 
+      cards: play.cards,
       user: play.user,
       statement: {
         value: play.statement.value,
@@ -386,7 +383,6 @@ const setStatementHistory = async (
   );
 
   if(!result) throw new Error('error setting statement history');
-  logger.debug('[redisController] getStatementHistory');
 };
 
 const clearStatementHistory = async (
@@ -402,10 +398,9 @@ const clearStatementHistory = async (
   );
 
   if(!result) throw new Error('error setting statement history');
-  logger.debug('[redisController] clearStatementHistory');
 };
 
-const setWinners = async (roomId: string, winners: Array<string>) => {
+const setWinners = async (roomId: string, winners: Array<User>) => {
   await client.json.set(
     roomId,
     '$.winners',
@@ -413,7 +408,7 @@ const setWinners = async (roomId: string, winners: Array<string>) => {
   );
 };
 
-const getWinners = async (roomId: string) => {
+const getWinners = async (roomId: string): Promise<Array<User>> => {
   const result = await client.json.get(
     roomId,
     {path: '.winners'},
@@ -421,10 +416,7 @@ const getWinners = async (roomId: string) => {
 
   if(!result || !Array.isArray(result)) throw new Error('Error getWinners');
 
-  return result.map(u => {
-    if(!isString(u)) throw new Error('Error getWinners');
-    return u;
-  });
+  return result.map(u => parseUser(u));
 };
 
 
@@ -441,8 +433,8 @@ export default{
   createRoom,
   deleteRoom,
   addUserToRoom,
-  getUsersInAGame,
-  removeUserFromRoom,
+  getPlayersInAGame,
+  removePlayerFromRoom,
   getPlayDeck,
   clearPlayDeck,
   appendPlayDeck,
@@ -450,8 +442,8 @@ export default{
   setIsActive,
   setTurn,
   getTurn,
-  setUserHand,
-  appendUserHand,
+  setPlayerHand,
+  appendPlayerHand,
   dealCardsFromDeck,
   setWinners,
   getWinners,

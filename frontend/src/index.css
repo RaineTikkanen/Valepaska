@@ -5,6 +5,13 @@
   --font-sans--font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
+.scrollbar-hidden {
+  scrollbar-width: none;
+}
+
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
 
 
 body {

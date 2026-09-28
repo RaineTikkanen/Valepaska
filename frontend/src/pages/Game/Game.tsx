@@ -10,23 +10,26 @@ import { doubt } from './handSlice.js';
 import logger from '../../utils/logger.ts';
 import { selectSelectedCards } from './handSlice.js';
 import {resetGame, selectGameState} from './gameSlice.ts';
+import type {User} from '../../types/game.ts';
 
 
-const User = ({user, isActive, position}:{user:string, isActive:boolean, position?: number}) => {
+const UserElement = ({user, isActive, position}:{user:string, isActive:boolean, position?: number}) => {
   const positionColor =
     position === 1 ? 'bg-yellow-500' :
       position === 2 ? 'bg-gray-400' :
         position === 3 ? 'bg-orange-700' :
           '';
 
+
+
   return(
-    <div className={'flex flex-row items-center justify-center'}>
+    <div className="flex flex-row items-center justify-center">
       {(position == 1 || position == 2 || position == 3) &&
-          <div className={`mx-2 flex flex-col items-center justify-center rounded-4xl px-6 py-4 ${positionColor}`}>
+          <div className={`flex flex-col items-center justify-center rounded-4xl px-6 py-4 mx-2 ${positionColor}`}>
             <p>{position}</p>
           </div>
       }
-      <div className={`flex justify-center rounded-4xl px-2 py-6 ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
+      <div className={`flex justify-center rounded-4xl px-2 py-6 min-w-30  ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
         <p>{user}</p>
       </div>
     </div>
@@ -34,21 +37,20 @@ const User = ({user, isActive, position}:{user:string, isActive:boolean, positio
 };
 
 
-const UserList = ({ turn, winners }: { turn: string, winners: Array<string> }) => {
-  const allUsers = useAppSelector(selectUsers);
-  const user = localStorage.getItem('userId');
 
-  const users=allUsers.filter(u => u !== user);
+const UserList = ({ turn, winners }: { turn: string, winners: Array<User> }) => {
+  const users = useAppSelector(selectUsers);
 
+  const userId = localStorage.getItem('userId');
 
   return (
     <div className="flex flex-row justify-center gap-5">
       {users.map((user) => (
-        <User
-          key={user}
-          user={user}
-          isActive={turn === user}
-          position={winners.findIndex(u => u === user)+1}
+        <UserElement
+          key={user.id}
+          user={user.id === userId ? 'Sinä' : user.name}
+          isActive={turn === user.id}
+          position={winners.findIndex(u => u.id === user.id)+1}
         />
       ))}
     </div>
@@ -66,20 +68,17 @@ const Game = () => {
 
 
   const turn = game.turn;
-  const user = localStorage.getItem('userId');
+  const userId = localStorage.getItem('userId');
 
 
-  const isMyTurn = turn === user;
+  const isMyTurn = turn === userId;
 
   const lastPlayIsAOr10 = game.lastPlay.statement.value === 1 || game.lastPlay.statement.value === 10;
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-
-  const position = game.winners.findIndex(u => u === user);
-  console.log(position);
-
+  const position = game.winners.findIndex(u => u.id === userId);
 
   const [modalOn, setModalOn] = useState(false);
 
@@ -105,20 +104,22 @@ const Game = () => {
   };
 
   return (
-    <div className="">
+    <div className="flex min-h-dvh flex-col justify-between">
       <PlayCardsModal
         modalOn={modalOn}
         toggleModal={toggleModal}
         selectedCards={selectedCards}
         lastPlay={game.lastPlay}
       />
-      <Button
-        text="Poistu pelistä"
-        onClick={onLeaveGame}
-      />
+      <div>
+        <Button
+          text="Poistu pelistä"
+          onClick={onLeaveGame}
+        />
+      </div>
       <UserList turn={turn} winners={game.winners} />
       <LastPlayView />
-      <div className="absolute inset-x-0 bottom-0 flex flex-col">
+      <div className="mt-auto flex flex-col">
         <div className="flex justify-center">
           {position !== -1 ?
             <div className="flex h-40 flex-col items-center justify-center">
@@ -130,7 +131,7 @@ const Game = () => {
         <div className="flex flex-row justify-center ">
           <Button
             text="Epäile"
-            disabled={game.lastPlay.user === user || !game.lastPlay.user}
+            disabled={game.lastPlay.user.id === userId || !game.lastPlay.user.id}
             onClick={() => {
               dispatch(doubt());
             }}

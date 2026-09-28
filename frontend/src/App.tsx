@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router';
+import {Routes, Route, useNavigate, useLocation} from 'react-router';
 import Header from './components/Header';
 
 import Game from './pages/Game';
@@ -6,13 +6,29 @@ import Home from './pages/Home';
 import Rules from './pages/Rules';
 import Lobby from './pages/Lobby';
 import Results from './pages/Results';
+import { useState } from 'react';
+
 
 function App() {
+  const [userName, setUserName] = useState(() => localStorage.getItem('userName') ?? '');
+  const navigate = useNavigate();
+  const location = useLocation();
+
+
+  const logOut = () => {
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userId');
+    setUserName('');
+    if(location.pathname !== '/' && location.pathname !== '/rules') {
+      void navigate('/');
+    }
+  };
+
   return (
-    <div className="h-screen p-5">
-      <Header />
+    <div>
+      <Header userName={userName} onLogout={logOut} />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home onUserNameChange={setUserName} />} />
         <Route path="/game" element={<Game />} />
         <Route path="/rules" element={<Rules />} />
         <Route path="/lobby" element={<Lobby />} />

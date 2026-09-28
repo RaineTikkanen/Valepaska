@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { WEBSOCKET_URL } from '../utils/config.js';
-import type { Card, GameStateUpdate, Statement } from '../types/game.js';
+import type {Card, GameStateUpdate, Statement, User} from '../types/game.js';
 
 
 
@@ -30,8 +30,8 @@ export const SocketEvents = {
 } as const;
 
 export interface ClientToServerEvents {
-  createRoom: (userId: string, callback: (result: string) => void) => void;
-  joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
+  createRoom: (user: User, callback: (result: string) => void) => void;
+  joinRoom: (roomId: string, user: User, callback: (result: string) => void) => void;
   startGame: (callback: (result: string) => void) => void;
   leaveRoom: (callback: (result: string) => void) => void;
   play: (cards: Array<Card>, statement: Statement, callback: (result: string)=> void)=>void;
@@ -41,7 +41,7 @@ export interface ClientToServerEvents {
 
 export interface ServerToClientEvents {
   gameStarts: () => void;
-  roomUpdate: (roomId: string, players: Array<string>) => void;
+  roomUpdate: (roomId: string, players: Array<User>) => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   turnUpdate:(turn: string)=>void;
   handUpdate: (cards: Array<Card>) => void;
@@ -49,11 +49,6 @@ export interface ServerToClientEvents {
   doubtResult: (cards: Array<Card>) => void;
   aboutToClear: ()=>void;
   gameEnds: () => void;
-}
-
-export interface SocketData {
-  userId: string;
-  roomId: string;
 }
 
 

@@ -1,7 +1,5 @@
 const nodeEnv = import.meta.env.VITE_NODE_ENV as string;
 
-console.log('NODE_ENV: ', nodeEnv);
-
 const info = (message: string, object?: object): void => {
   if(nodeEnv==='development') {
     if(object) console.info(message, object);

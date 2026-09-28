@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import { createServer } from 'node:http';
 import { PORT, REDIS_URL, WEBSOCKET_PORT } from './utils/config.js';
 import gameService from './services/gameService.js';
-import type {GameStateUpdate, Statement} from './services/gameService.type.js';
+import type {GameStateUpdate, Statement, User} from './services/gameService.type.js';
 import cors from 'cors';
 import type { Card } from './deck/deck.type.js';
 import { v7 as uuidv7 } from 'uuid';
@@ -35,7 +35,7 @@ export const SocketEvents = {
 } as const;
 
 export interface ServerToClientEvents {
-  roomUpdate: (roomId: string, players: Array<string>) => void;
+  roomUpdate: (roomId: string, players: Array<User>) => void;
   gameStarts:() => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   turnUpdate: (turn: string) => void;
@@ -47,8 +47,8 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  createRoom: (userId:string, callback:(result: string) => void) => void;
-  joinRoom: (roomId: string, userId: string, callback: (result: string) => void) => void;
+  createRoom: (user: User, callback:(result: string) => void) => void;
+  joinRoom: (roomId: string, user: User, callback: (result: string) => void) => void;
   leaveRoom: (callback:(result: string) => void) => void;
   startGame: (callback: (result: string) => void) => void;
   doubt: (callback: (result: string) => void,) => void;
@@ -59,6 +59,7 @@ export interface ClientToServerEvents {
 export interface SocketData {
   userId: string;
   roomId: string;
+  userName: string;
 }
 
 const app = express();
