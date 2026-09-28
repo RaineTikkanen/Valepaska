@@ -32,7 +32,7 @@ const updatePlayerHand = (players: Array<Player>, userId: string, newHand: Array
     }
     return p;
   });
-}
+};
 
 /**
 * Returns users index in users array

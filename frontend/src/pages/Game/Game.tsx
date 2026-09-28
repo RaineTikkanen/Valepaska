@@ -25,11 +25,11 @@ const UserElement = ({user, isActive, position}:{user:string, isActive:boolean, 
   return(
     <div className="flex flex-row items-center justify-center">
       {(position == 1 || position == 2 || position == 3) &&
-          <div className={`flex flex-col items-center justify-center rounded-4xl px-6 py-4 mx-2 ${positionColor}`}>
+          <div className={`mx-2 flex flex-col items-center justify-center rounded-4xl px-6 py-4 ${positionColor}`}>
             <p>{position}</p>
           </div>
       }
-      <div className={`flex justify-center rounded-4xl px-2 py-6 min-w-30  ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
+      <div className={`flex min-w-30 justify-center rounded-4xl px-2 py-6  ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
         <p>{user}</p>
       </div>
     </div>
