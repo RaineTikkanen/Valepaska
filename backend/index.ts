@@ -100,14 +100,11 @@ app.get('/api/userId', (_req, res) => {
 });
 
 if(process.env.NODE_ENV !== 'development') {
-  app.get('/{*path}', (req, res, next) => {
+  app.get('/{*path}', (req, res) => {
     if (req.path === '/api' || req.path.startsWith('/api/')) {
-      next();
       return;
     }
-    res.sendFile('index.html', {root: 'dist'}, (error) => {
-      if (error) next(error);
-    });
+    res.sendFile('index.html', {root: 'dist'});
   });
 }
 
