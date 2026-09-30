@@ -176,6 +176,7 @@ const gameService = (
     logger.debug('[gameService] doubt action triggered');
     const roomId = socket.data.roomId;
     const userId = socket.data.userId;
+    const userName= socket.data.userName;
     try {
       const gameState = await redisController.getGameState(roomId);
       if(gameState.lastPlay.user.id === userId) throw new Error('Can\'t doubt own play');
@@ -187,7 +188,7 @@ const gameService = (
       if (!gameState.lastPlay.user) throw new Error('No last play');
 
       //Send clients a notification that someone is doubting
-      io.to(roomId).emit(SocketEvents.DOUBTED, userId);
+      io.to(roomId).emit(SocketEvents.DOUBTED, userName);
 
 
       //Wait a while and send doubt results
@@ -330,7 +331,7 @@ const gameService = (
       logger.child({oldHand: players[playerIndex].hand}).debug('[gameService] play: updating hand');
       let newHand = helpers.removeCardsFromCardsArray(parsedCards, players[playerIndex].hand);
       logger.child({newHand: newHand}).debug('[gameService] play: Played cards removed');
-      if (gameState.deck.length !== 0) {
+      if (gameState.deck.length !== 0 && newHand.length < 5) {
         //Get new cards from play deck
         const newCards = gameState.deck.slice(0, parsedCards.length);
         logger.child({newCards: newCards}).debug('[gameService] play: Cards got from deck');

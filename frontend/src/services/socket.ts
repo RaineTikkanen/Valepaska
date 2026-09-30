@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { WEBSOCKET_URL } from '../utils/config.js';
+import { BACKEND_URL } from '../utils/config.js';
 import type {Card, GameStateUpdate, Statement, User} from '../types/game.js';
 
 
@@ -45,19 +45,19 @@ export interface ServerToClientEvents {
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   turnUpdate:(turn: string)=>void;
   handUpdate: (cards: Array<Card>) => void;
-  doubted: (userId: string) => void;
+  doubted: (user: string) => void;
   doubtResult: (cards: Array<Card>) => void;
   aboutToClear: ()=>void;
   gameEnds: () => void;
 }
 
 
-export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(WEBSOCKET_URL, {
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(BACKEND_URL, {
   autoConnect: false,
   reconnection: true,
   reconnectionAttempts: 5,
   reconnectionDelay: 1000,
   timeout: 2000,
   forceNew: false,
-  path: '/ws/socket.io',
+  path: '/socket.io',
 });

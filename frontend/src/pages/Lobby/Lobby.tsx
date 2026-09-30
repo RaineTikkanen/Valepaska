@@ -35,7 +35,7 @@ const Lobby = () => {
 
   const getGuestUserId = async () => {
     try {
-      const response = await fetch(BACKEND_URL + 'userId');
+      const response = await fetch(BACKEND_URL + '/api/userId');
       const result: unknown = await response.json();
       const userId = parseUserId(result);
 

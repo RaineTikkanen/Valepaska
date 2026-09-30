@@ -7,6 +7,7 @@ import { parseStatus } from './controller.type.js';
 import type {Statement, User} from '../services/gameService.type.js';
 import { parseUser } from '../services/gameService.type.js';
 import { parseCard } from '../deck/deck.type.js';
+import logger from '../utils/logger.js';
 
 
 
@@ -61,9 +62,14 @@ const createRoom = async (roomId: string ) => {
 const getStatus = async (roomId: string): Promise<Status> => {
   const result = await client.json.get(
     roomId,
-    {path: '.status'}
+    {path: '$.status'}
   );
-  return parseStatus(result);
+
+  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'string') {
+    throw new Error('Cant get status');
+  }
+
+  return parseStatus(result[0]);
 };
 
 /**
@@ -100,11 +106,13 @@ const removePlayerFromRoom = async (roomId: string, userIndex: number) => {
 const getIsActive = async (roomId: string): Promise<boolean> => {
   const result = await client.json.get(
     roomId,
-    {path: '.isActive'}
+    {path: '$.isActive'}
   );
-  if(typeof result !== 'boolean') throw new Error('Cant get isActive');
+  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'boolean') {
+    throw new Error('Cant get isActive');
+  }
 
-  return result;
+  return result[0];
 };
 
 /**
@@ -115,7 +123,7 @@ const getIsActive = async (roomId: string): Promise<boolean> => {
 const setIsActive = async (roomId: string, isActive: boolean) => {
   const result = await client.json.set(
     roomId,
-    'isActive',
+    '$.isActive',
     isActive
   );
 
@@ -159,12 +167,14 @@ const setTurn = async (roomId: string, turn: string) => {
 const getTurn = async(roomId: string): Promise<string> => {
   const result = await client.json.get(
     roomId,
-    {path: '.turn'}
+    {path: '$.turn'}
   );
 
-  if (typeof result !== 'string') throw new Error('Error getting turn');
+  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'string') {
+    throw new Error('Cant get turn');
+  }
 
-  return result;
+  return result[0];
 };
 
 
@@ -175,9 +185,15 @@ const getTurn = async(roomId: string): Promise<string> => {
 const getPlayDeck = async (roomId: string): Promise<Array<Card>> => {
   const result = await client.json.get(
     roomId,
-    {path: '.playDeck'}
+    {path: '$.playDeck'}
   );
-  if(!Array.isArray(result)) throw new Error('Error getting play deck');
+
+  if(!Array.isArray(result)
+    || result.length !== 1
+    || !Array.isArray(result[0])
+  ) {
+    throw new Error('Cant get playDeck');
+  }
   return result.map(c => parseCard(c));
 };
 
@@ -230,14 +246,16 @@ const setPlayerHand = async (roomId: string, hand: Array<Card>, userIndex: numbe
  * @returns
  */
 const getPlayersInAGame = async (roomId: string): Promise<Array<Player>> => {
-  const players = await client.json.get(
+  const result = await client.json.get(
     roomId,
-    {path: '.players'}
+    {path: '$.players'}
   ) as Array<Player> | null;
 
-  if(players===null) throw new Error('Players not found');
+  if(!Array.isArray(result) || result.length !== 1 || !Array.isArray(result[0])) {
+    throw new Error('Cant get players in a game');
+  }
 
-  return players;
+  return result[0];
 };
 
 
@@ -281,12 +299,16 @@ const dealCardsFromDeck = async (roomId: string, amount: number): Promise<Array<
 const popCardFromDeck = async (roomId: string): Promise<Card | null> => {
   const result = await client.json.arrPop(
     roomId,
-    {path: '.deck'}
+    {path: '$.deck'}
   );
 
-  if(result === null) return null;
+  logger.child({result: result}).debug('[redisController] popCardFromDeck');
 
-  return parseCard(result);
+  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'object') {
+    throw new Error('Cant popCardFromDeck');
+  }
+
+  return parseCard(result[0]);
 };
 
 
@@ -312,14 +334,16 @@ const setGameState = async (roomId: string, gameState: GameState) => {
 
 
 const getLastPlay = async (roomId: string): Promise<Play> => {
-  const lastPlay = await client.json.get(
+  const result = await client.json.get(
     roomId,
     { path: '.lastPlay' }
-  ) as Play | null;
+  );
 
-  if(!lastPlay) throw new Error('LastPlay not found');
+  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'object') {
+    throw new Error('Cant get lastPlay');
+  }
 
-  return lastPlay;
+  return result[0] as Play;
 };
 
 const setLastPlay = async (roomId: string, play: Play) => {
@@ -361,11 +385,14 @@ const clearLastPlay = async (roomId: string) => {
 const getStatementHistory = async (roomId: string): Promise<Statement> => {
   const result = await client.json.get(
     roomId,
-    { path: '.statementHistory' }
-  ) as Statement | null;
+    { path: '$.statementHistory' }
+  );
 
-  if(!result) throw new Error('statementHistory not found');
-  return result;
+  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'object') {
+    throw new Error('Cant get statementHistory');
+  }
+
+  return result[0] as Statement;
 };
 
 
@@ -411,10 +438,12 @@ const setWinners = async (roomId: string, winners: Array<User>) => {
 const getWinners = async (roomId: string): Promise<Array<User>> => {
   const result = await client.json.get(
     roomId,
-    {path: '.winners'},
+    {path: '$.winners'},
   );
 
-  if(!result || !Array.isArray(result)) throw new Error('Error getWinners');
+  if(!Array.isArray(result) || result.length !== 1 || !Array.isArray(result[0])) {
+    throw new Error('Cant get winners');
+  }
 
   return result.map(u => parseUser(u));
 };
