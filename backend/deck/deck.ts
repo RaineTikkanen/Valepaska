@@ -19,6 +19,11 @@ const getShuffledDeck = (): Array<Card> => {
     [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
   }
 
+  //for development purposes deal only 15 cards so game ends faster
+  if(process.env.NODE_ENV === 'development') {
+    return newDeck.splice(0,15);
+  }
+
   return newDeck;
 };
 

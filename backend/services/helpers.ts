@@ -23,6 +23,7 @@ const createGameStateUpdateFromGameState = (gameState: GameState) => {
   return gameStateUpdate;
 };
 
+
 const updatePlayerHand = (players: Array<Player>, userId: string, newHand: Array<Card>) => {
   return players.map(p => {
     if(p.user.id === userId){

@@ -1,15 +1,9 @@
 import redis from 'redis';
 import { REDIS_URL } from '../utils/config.js';
 import getShuffledDeck from '../deck/deck.js';
-import type { Card } from '../deck/deck.type.js';
 import type {Play, Player, GameState, Status} from './controller.type.js';
 import { parseStatus } from './controller.type.js';
-import type {Statement, User} from '../services/gameService.type.js';
-import { parseUser } from '../services/gameService.type.js';
-import { parseCard } from '../deck/deck.type.js';
-import logger from '../utils/logger.js';
-
-
+import type {User} from '../services/gameService.type.js';
 
 const client = redis.createClient({
   url: REDIS_URL
@@ -147,7 +141,7 @@ const addUserToRoom = async (roomId: string, user: User ) => {
 /**
  * Function to set turn in a game. Throws an error if setting the turn fails
  * @param {string} roomId Id of room
- * @param {sring} turn Id of user whose turn it is
+ * @param {string} turn Id of user whose turn it is
  */
 const setTurn = async (roomId: string, turn: string) => {
   const result = await client.json.set(
@@ -157,87 +151,6 @@ const setTurn = async (roomId: string, turn: string) => {
   );
   if(result !== 'OK') throw new Error('Cant set turn');
 };
-
-
-/**
- * Function to get the id of a player whose turn it is. Throws an error if turn is not found
- * @param {string} roomId Id of room
- * @returns {string} Id of user whose turn it is
- */
-const getTurn = async(roomId: string): Promise<string> => {
-  const result = await client.json.get(
-    roomId,
-    {path: '$.turn'}
-  );
-
-  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'string') {
-    throw new Error('Cant get turn');
-  }
-
-  return result[0];
-};
-
-
-/**
- * Function to get the play deck. Throws an error if getting the deck fails
- * @param roomId
- */
-const getPlayDeck = async (roomId: string): Promise<Array<Card>> => {
-  const result = await client.json.get(
-    roomId,
-    {path: '$.playDeck'}
-  );
-
-  if(!Array.isArray(result)
-    || result.length !== 1
-    || !Array.isArray(result[0])
-  ) {
-    throw new Error('Cant get playDeck');
-  }
-  return result.map(c => parseCard(c));
-};
-
-/**
- * Function to add cards to the play deck
- * @param {string} roomId Id of room
- * @param {Cards}cards
- */
-const appendPlayDeck = async (roomId: string, cards: Array<Card>) => {
-  for (const card of cards) {
-    await client.json.arrAppend(
-      roomId,
-      '$.playDeck',
-      card
-    );
-  }
-};
-
-
-/**
- * Function to clear the play deck. Throws an error if clearing fails.
- * @param {}roomId
- */
-const clearPlayDeck = async (roomId: string) => {
-
-  const result = await client.json.set(
-    roomId,
-    '$.playDeck',
-    []
-  );
-
-  if(!result) throw new Error('Error clearing play deck');
-};
-
-
-const setPlayerHand = async (roomId: string, hand: Array<Card>, userIndex: number) => {
-  const result = await client.json.set(
-    roomId,
-    `$.players[${userIndex}].hand`,
-    hand
-  );
-  if(result !== 'OK') throw new Error('Failed to set user hand');
-};
-
 
 
 /**
@@ -256,59 +169,6 @@ const getPlayersInAGame = async (roomId: string): Promise<Array<Player>> => {
   }
 
   return result[0];
-};
-
-
-
-/**
- * Adds number of cards to a player's hand
- * @param roomId
- * @param index user index in players array
- * @param cards cards to add to hand
- */
-const appendPlayerHand = async (roomId: string, index: number, cards: Array<Card>) => {
-  for (const card of cards) {
-    await client.json.arrAppend(
-      roomId,
-      `$.players[${index}].hand`,
-      card
-    );
-  }
-};
-
-/**
- * Pops cards from deck and returns them
- * @param roomId
- * @param amount number of cards to deal
- */
-const dealCardsFromDeck = async (roomId: string, amount: number): Promise<Array<Card>> => {
-  let cards: Array<Card>=[];
-
-  for(let i=0; i < amount; i++){
-    const card = await popCardFromDeck(roomId);
-
-    if (!card) break;
-
-    cards= cards.concat(card);
-  }
-
-  return cards;
-};
-
-
-const popCardFromDeck = async (roomId: string): Promise<Card | null> => {
-  const result = await client.json.arrPop(
-    roomId,
-    {path: '$.deck'}
-  );
-
-  logger.child({result: result}).debug('[redisController] popCardFromDeck');
-
-  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'object') {
-    throw new Error('Cant popCardFromDeck');
-  }
-
-  return parseCard(result[0]);
 };
 
 
@@ -332,20 +192,6 @@ const setGameState = async (roomId: string, gameState: GameState) => {
   if(result !== 'OK') throw new Error('Cant set game state');
 };
 
-
-const getLastPlay = async (roomId: string): Promise<Play> => {
-  const result = await client.json.get(
-    roomId,
-    { path: '.lastPlay' }
-  );
-
-  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'object') {
-    throw new Error('Cant get lastPlay');
-  }
-
-  return result[0] as Play;
-};
-
 const setLastPlay = async (roomId: string, play: Play) => {
   const result = await client.json.set(
     roomId,
@@ -363,70 +209,6 @@ const setLastPlay = async (roomId: string, play: Play) => {
   if(result !== 'OK') throw new Error('cant set lastPlay');
 };
 
-
-const clearLastPlay = async (roomId: string) => {
-  const result = await client.json.set(
-    roomId,
-    '$.lastPlay',
-    {
-      cards: [],
-      user: '',
-      statement: {
-        value: 0,
-        amount: 0,
-      },
-    },
-  );
-
-  if(!result) throw new Error('Error clearing last play');
-};
-
-
-const getStatementHistory = async (roomId: string): Promise<Statement> => {
-  const result = await client.json.get(
-    roomId,
-    { path: '$.statementHistory' }
-  );
-
-  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'object') {
-    throw new Error('Cant get statementHistory');
-  }
-
-  return result[0] as Statement;
-};
-
-
-const setStatementHistory = async (
-  roomId: string,
-  statement: Statement
-) => {
-  const result = await client.json.set(
-    roomId,
-    '$.statementHistory',
-    {
-      value: statement.value,
-      amount: statement.amount
-    }
-  );
-
-  if(!result) throw new Error('error setting statement history');
-};
-
-const clearStatementHistory = async (
-  roomId: string,
-) => {
-  const result = await client.json.set(
-    roomId,
-    '$.statementHistory',
-    {
-      value: 0,
-      amount: 0
-    }
-  );
-
-  if(!result) throw new Error('error setting statement history');
-};
-
 const setWinners = async (roomId: string, winners: Array<User>) => {
   await client.json.set(
     roomId,
@@ -435,47 +217,20 @@ const setWinners = async (roomId: string, winners: Array<User>) => {
   );
 };
 
-const getWinners = async (roomId: string): Promise<Array<User>> => {
-  const result = await client.json.get(
-    roomId,
-    {path: '$.winners'},
-  );
-
-  if(!Array.isArray(result) || result.length !== 1 || !Array.isArray(result[0])) {
-    throw new Error('Cant get winners');
-  }
-
-  return result.map(u => parseUser(u));
-};
-
-
 
 export default{
   getGameState,
   setGameState,
-  getLastPlay,
   setLastPlay,
-  clearLastPlay,
-  getStatementHistory,
-  setStatementHistory,
-  clearStatementHistory,
   createRoom,
   deleteRoom,
   addUserToRoom,
   getPlayersInAGame,
   removePlayerFromRoom,
-  getPlayDeck,
-  clearPlayDeck,
-  appendPlayDeck,
   getIsActive,
   setIsActive,
   setTurn,
-  getTurn,
-  setPlayerHand,
-  appendPlayerHand,
-  dealCardsFromDeck,
   setWinners,
-  getWinners,
   getStatus,
   setStatus,
 };
