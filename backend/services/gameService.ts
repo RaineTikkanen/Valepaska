@@ -35,8 +35,10 @@ const gameService = (
 
   const joinRoomInternal = async (roomId: string, user: User) => {
     const isActive = await redisController.getIsActive(roomId);
+    const players = await redisController.getPlayersInAGame(roomId);
 
     if(isActive) throw new Error('game is already active');
+    if(players.length>3) throw new Error('Room full');
 
     await redisController.addUserToRoom(roomId, user);
     await socket.join(roomId);
@@ -109,30 +111,35 @@ const gameService = (
     try {
       const roomId = socket.data.roomId;
 
-      const players = await redisController.getPlayersInAGame(roomId);
-      if (players.length === 1) throw new Error('Not enough players');
+      const gameState = await redisController.getGameState(roomId);
+      if (gameState.players.length === 1) throw new Error('Not enough players');
+
+      const newDeck = gameState.deck;
 
 
+      //Deal 5 cards to each user
+      const newPlayers = gameState.players.map((p)=>{
+        return {...p, hand: newDeck.splice(0,5)};
+      });
+      logger.child({newPlayers: newPlayers}).debug('[start game]');
 
-      for(let i = players.length - 1; i >= 0; i--) {
-        const cards = await redisController.dealCardsFromDeck(roomId, 5);
-        await redisController.setPlayerHand(roomId, cards, i);
-      }
 
-      const starterIndex = getRandomInt(players.length);
-      const starterId = players[starterIndex].user.id;
+      const starterIndex = getRandomInt(gameState.players.length);
+      const starterId = gameState.players[starterIndex].user.id;
 
-      await redisController.setTurn(roomId, starterId);
-      await redisController.setIsActive(roomId, true);
-
+      const newGameState: GameState = {
+        ...gameState,
+        isActive: true,
+        turn: starterId,
+        deck: newDeck,
+        players: newPlayers,
+      };
+      await redisController.setGameState(roomId, newGameState);
       io.to(roomId).emit(SocketEvents.GAME_STARTS);
 
-      const updatedPlayers = await redisController.getPlayersInAGame(roomId);
-
       //send dealt cards to clients
-      for (const player of updatedPlayers) {
-        const hand = player.hand;
-        io.to(player.user.id).emit(SocketEvents.HAND_UPDATE, hand);
+      for (const player of newPlayers) {
+        io.to(player.user.id).emit(SocketEvents.HAND_UPDATE, player.hand);
       }
 
       io.to(roomId).emit(SocketEvents.TURN_UPDATE, starterId);
@@ -224,12 +231,6 @@ const gameService = (
       const newPlayers = helpers.updatePlayerHand(gameState.players, loserId, newLoserHand);
 
 
-      //clear playdeck, lastPlay and statementHistory
-      await redisController.clearPlayDeck(roomId);
-      await redisController.clearLastPlay(roomId);
-      await redisController.clearStatementHistory(roomId);
-
-
       //After a while send handUpdate to loser and send playDeck update and turn update to everyone
       io.to(loserId).emit(SocketEvents.HAND_UPDATE, newLoserHand);
 
@@ -310,12 +311,12 @@ const gameService = (
       const gameState = await redisController.getGameState(roomId);
 
       logger.child({status: gameState.status}).debug('[gameService] play');
-      if (gameState.status !== 'IDLE') throw new Error('Status not IDLE, cant resolve play action');
+      if (gameState.status !== 'IDLE') throw new Error('Status not IDLE, can\'t resolve play action');
       logger.debug('[gameService] play: setting status to PLAYING');
       await redisController.setStatus(roomId, 'PLAYING');
 
       let newWinners = gameState.winners;
-      let newDeck = gameState.deck;
+      const newDeck = gameState.deck;
       const newPlayDeck = gameState.playDeck.concat(parsedCards);
       let newStatementHistory = gameState.statementHistory;
 
@@ -333,20 +334,13 @@ const gameService = (
       logger.child({newHand: newHand}).debug('[gameService] play: Played cards removed');
       if (gameState.deck.length !== 0 && newHand.length < 5) {
         //Get new cards from play deck
-        const newCards = gameState.deck.slice(0, parsedCards.length);
-        logger.child({newCards: newCards}).debug('[gameService] play: Cards got from deck');
-        newDeck = gameState.deck.slice(parsedCards.length);
+        const newCards = newDeck.splice(0, parsedCards.length);
         //Add new cards to remaining hand
         newHand = newHand.concat(newCards);
       }
-
-      logger.child({newHand: newHand}).debug('[gameService] play: New hand');
       io.to(userId).emit(SocketEvents.HAND_UPDATE, newHand);
 
-
       const newPlayers = helpers.updatePlayerHand(gameState.players, userId, newHand);
-
-      logger.child({users: newPlayers}).debug('[gameService] play: Users after dealing cards');
 
       //If the deck is empty, check for any players with empty hand
 
