@@ -6,6 +6,16 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   server: {
     allowedHosts: ['app', 'localhost'],
+    proxy: {
+      '/socket.io': {
+        target: 'http://backend:3000 ',
+        changeOrigin: true,
+      },
+      '/api' : {
+        target: 'http://backend:3000 ',
+        changeOrigin: true,
+      }
+    }
   },
   plugins: [
     tailwindcss(),

@@ -1,8 +1,7 @@
+import logger from './logger.ts';
 
- 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string; // || 'http://localhost:3000';
 
- 
-const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL as string; // || 'ws://localhost:4000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ? import.meta.env.VITE_BACKEND_URL as string : '';
 
-export { BACKEND_URL, WEBSOCKET_URL };
+logger.debug('VITE_BACKEND_URL', {BACKEND_URL});
+export { BACKEND_URL};

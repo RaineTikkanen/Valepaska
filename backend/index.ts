@@ -2,13 +2,13 @@ import express from 'express';
 import type { Socket } from 'socket.io';
 import { Server } from 'socket.io';
 import { createServer } from 'node:http';
-import { PORT, REDIS_URL, WEBSOCKET_PORT } from './utils/config.js';
+import { PORT, REDIS_URL} from './utils/config.js';
 import gameService from './services/gameService.js';
 import type {GameStateUpdate, Statement, User} from './services/gameService.type.js';
-import cors from 'cors';
 import type { Card } from './deck/deck.type.js';
 import { v7 as uuidv7 } from 'uuid';
 import logger from './utils/logger.js';
+// import path from 'node:path';
 
 export const SocketEvents = {
   CONNECT: 'connect',
@@ -69,16 +69,12 @@ const io = new Server<
   ServerToClientEvents,
   Record<string, never>,
   SocketData
->({
-  cors: {
-    origin: '*'
-  }
-});
+>(server);
 
-
-app.use(express.static('dist'));
+if(process.env.NODE_ENV !== 'development') {
+  app.use(express.static('dist'));
+}
 app.use(express.json());
-app.use(cors());
 
 
 const onConnect = (
@@ -92,22 +88,31 @@ const onConnect = (
   gameService(io, socket);
 };
 
-io.listen(WEBSOCKET_PORT);
 io.on('connection', onConnect);
 
-app.get('/health', (_req, res) => {
+app.get('/api/health', (_req, res) => {
   res.send({ health_status: 'OK' });
 });
 
-app.get('/userId', (_req, res) => {
+app.get('/api/userId', (_req, res) => {
   const id = uuidv7();
   res.json({'id':id});
 });
 
-
+if(process.env.NODE_ENV !== 'development') {
+  app.get('/{*path}', (req, res, next) => {
+    if (req.path === '/api' || req.path.startsWith('/api/')) {
+      next();
+      return;
+    }
+    res.sendFile('index.html', {root: 'dist'}, (error) => {
+      if (error) next(error);
+    });
+  });
+}
 
 server.listen(PORT, () => {
+  logger.debug(`NODE.ENV ${process.env.NODE_ENV}`);
   logger.info(`Server running on port ${PORT}`);
-  logger.info(`WebSocket port ${WEBSOCKET_PORT}`);
   logger.info(`Redis running on port ${REDIS_URL}`);
 });
