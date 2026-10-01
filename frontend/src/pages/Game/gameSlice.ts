@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type {Play, GameStateUpdate, User} from '../../../../backend/types/game.type.ts';
-import type {Card} from '../../../../backend/types/deck.type.ts';
+import type {Play, GameStateUpdate, User} from '../../types/game.type.ts';
+import type {Card} from '../../types/deck.type.ts';
 import type {RootState} from '../../store.ts';
 
 export interface GameState {

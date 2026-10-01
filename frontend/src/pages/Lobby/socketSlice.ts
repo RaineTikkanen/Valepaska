@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
-import type {GamePlayer} from '../../../../backend/types/game.type.ts';
+import type {GamePlayer} from '../../types/game.type.ts';
 
 
 export interface SocketState {

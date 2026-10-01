@@ -10,7 +10,7 @@ import { doubt } from './handSlice.js';
 import logger from '../../utils/logger.ts';
 import { selectSelectedCards } from './handSlice.js';
 import {resetGame, selectGameState} from './gameSlice.ts';
-import type {User} from '../../../../backend/types/game.type.ts';
+import type {User} from '../../types/game.type.ts';
 
 
 interface UserElementProps {

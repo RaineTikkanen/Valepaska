@@ -1,5 +1,5 @@
 import cardImages from '../../assets/cardImages';
-import type { Card } from '../../../../backend/types/deck.type.ts';
+import type { Card } from '../../types/deck.type.ts';
 import {useAppDispatch} from '../../hooks/redux';
 import { toggleCardSelectState } from './handSlice';
 
