@@ -1,4 +1,4 @@
-import type {GameStateUpdate, Statement, User, GamePlayer} from './types/gameService.type.js';
+import type {GameStateUpdate, Statement, User, GamePlayer} from './types/game.type.js';
 import type {Card} from './types/deck.type.js';
 
 

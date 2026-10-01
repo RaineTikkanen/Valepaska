@@ -1,6 +1,6 @@
 import Modal from '../../components/Modal';
-import type { Play, Statement } from '../../../../backend/types/game.type.ts';
-import type {Card} from '../../../../backend/types/deck.type.ts';
+import type { Play, Statement } from '../../../types/game.type.ts';
+import type {Card} from '../../../types/deck.type.ts';
 import { playCards } from './handSlice.js';
 import { useAppDispatch } from '../../hooks/redux.js';
 import { cardValueToString } from '../../utils/utils.js';

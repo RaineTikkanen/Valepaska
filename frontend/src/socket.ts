@@ -1,11 +1,30 @@
 import { io, Socket } from 'socket.io-client';
 import { BACKEND_URL } from './utils/config.ts';
-// import type {GameStateUpdate, GamePlayer, Statement, User} from '../../backend/services/gameService.type.ts';
-// import type {Card} from '../../backend/deck/deck.type.ts';
-
-import type { ClientToServerEvents, ServerToClientEvents } from '../../backend/socket.ts';
+import type {GamePlayer, GameStateUpdate, Statement, User} from '../types/game.type.ts';
+import type {Card} from '../types/deck.type.ts';
 
 
+export interface ServerToClientEvents {
+  roomUpdate: (roomId: string, players: Array<GamePlayer>) => void;
+  gameStarts:() => void;
+  gameStateUpdate: (gameState: GameStateUpdate) => void;
+  turnUpdate: (turn: string) => void;
+  handUpdate: (cards: Array<Card>) => void;
+  doubted: (doubter: string)=> void;
+  doubtResult: (cards: Array<Card>) => void;
+  aboutToClear: ()=>void;
+  gameEnds:() => void;
+}
+
+export interface ClientToServerEvents {
+  createRoom: (user: User, callback:(result: string) => void) => void;
+  joinRoom: (roomId: string, user: User, callback: (result: string) => void) => void;
+  leaveRoom: (callback:(result: string) => void) => void;
+  startGame: (callback: (result: string) => void) => void;
+  doubt: (callback: (result: string) => void,) => void;
+  play: (cards: Array<Card>, statement: Statement, callback: (result: string) => void,) => void;
+  getGameState: () => void;
+}
 
 export const SocketEvents = {
   CONNECT: 'connect',

@@ -4,8 +4,8 @@ import type { AppDispatch, RootState } from '../store.js';
 import { isAction } from '@reduxjs/toolkit';
 import { socket } from '../socket.ts';
 import { isStatement, isString } from '../utils/typeGuards.js';
-import type {GameStateUpdate, GamePlayer} from '../../../backend/types/game.type.ts';
-import type {Card} from '../../../backend/types/deck.type.ts';
+import type {GameStateUpdate, GamePlayer} from '../../types/game.type.ts';
+import type {Card} from '../../types/deck.type.ts';
 
 import { 
   connect, 
