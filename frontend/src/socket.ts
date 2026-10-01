@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 import { BACKEND_URL } from './utils/config.ts';
-import type {GamePlayer, GameStateUpdate, Statement, User} from '../types/game.type.ts';
-import type {Card} from '../types/deck.type.ts';
+import type {GamePlayer, GameStateUpdate, Statement, User} from './types/game.type.ts';
+import type {Card} from './types/deck.type.ts';
 
 
 export interface ServerToClientEvents {
