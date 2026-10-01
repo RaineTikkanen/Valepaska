@@ -1,7 +1,7 @@
-import type { Card } from '../deck/deck.type.js';
-import type {Statement, User} from '../services/gameService.type.js';
+import type { Card } from './deck.type.js';
+import type {Statement, User} from './game.type.js';
 
-export type Player = {
+export type RedisPlayer = {
   user: User;
   hand: Array<Card>;
 };
@@ -21,7 +21,7 @@ export type GameState = {
   turn: string;
   deck: Array<Card>;
   playDeck: Array<Card>;
-  players: Array<Player>;
+  players: Array<RedisPlayer>;
   lastPlay: Play;
   statementHistory: Statement
 };

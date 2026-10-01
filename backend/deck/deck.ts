@@ -1,4 +1,4 @@
-import type { Card } from './deck.type.js';
+import type { Card } from '../types/deck.type.js';
 
 const suits = ['C', 'D', 'H', 'S'] as const;
 const values = Array.from({ length: 13 }, (_, index) => index + 1);

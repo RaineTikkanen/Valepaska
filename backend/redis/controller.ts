@@ -1,9 +1,9 @@
 import redis from 'redis';
 import { REDIS_URL } from '../utils/config.js';
 import getShuffledDeck from '../deck/deck.js';
-import type {Play, Player, GameState, Status} from './controller.type.js';
-import { parseStatus } from './controller.type.js';
-import type {User} from '../services/gameService.type.js';
+import type {Play, RedisPlayer, GameState, Status} from '../types/controller.type.js';
+import { parseStatus } from '../types/controller.type.js';
+import type {User} from '../types/game.type.js';
 
 const client = redis.createClient({
   url: REDIS_URL
@@ -158,11 +158,11 @@ const setTurn = async (roomId: string, turn: string) => {
  * @param roomId
  * @returns
  */
-const getPlayersInAGame = async (roomId: string): Promise<Array<Player>> => {
+const getPlayersInAGame = async (roomId: string): Promise<Array<RedisPlayer>> => {
   const result = await client.json.get(
     roomId,
     {path: '$.players'}
-  ) as Array<Player> | null;
+  ) as Array<RedisPlayer> | null;
 
   if(!Array.isArray(result) || result.length !== 1 || !Array.isArray(result[0])) {
     throw new Error('Cant get players in a game');

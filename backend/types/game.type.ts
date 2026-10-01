@@ -1,4 +1,5 @@
 import {parseId} from '../utils/utils.js';
+import {CardValues} from './deck.type.js';
 
 export type Play = {
   user: User;
@@ -15,11 +16,18 @@ export type User = {
   id: string;
 };
 
+export type GamePlayer = {
+  user: User;
+  amountOfCards: number;
+};
+
 export type GameStateUpdate = {
   winners: Array<User>;
   lastPlay: Play;
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;
+  players: Array<GamePlayer>;
+  cardsInDeck: number;
 };
 
 export const parseStatement = (statement: unknown): Statement => {
@@ -28,8 +36,19 @@ export const parseStatement = (statement: unknown): Statement => {
     || !('value' in statement)
     || typeof statement.value !== 'number'
     || !('amount' in statement)
-    || typeof statement.amount !== 'number')
+    || typeof statement.amount !== 'number'
+    || statement.amount < 1
+    || statement.amount > 4
+    || !CardValues.some(value => value === statement.value)
+    || (statement.value === 1 && statement.amount !== 1)
+    || (statement.value === 2 && statement.amount !== 1)
+    || (statement.value === 10 && statement.amount !== 1)
+  )
+  {
     throw new Error('Invalid statement');
+  }
+
+
 
   return {value:statement.value, amount:statement.amount};
 };
@@ -44,7 +63,7 @@ export const parseUser = (user: unknown) :User => {
     || user.name.length > 20
     || user.name.length <4){
     throw new Error('Invalid user');
-  };
+  }
 
   return {id:parseId(user.id), name: user.name };
 };

@@ -1,7 +1,6 @@
 import Modal from '../../components/Modal';
-import type { Card, Play, Statement } from '../../types/game.js';
-import Button from '../../components/Button';
-import { useState } from 'react';
+import type { Play, Statement } from '../../../../backend/types/game.type.ts';
+import type {Card} from '../../../../backend/types/deck.type.ts';
 import { playCards } from './handSlice.js';
 import { useAppDispatch } from '../../hooks/redux.js';
 import { cardValueToString } from '../../utils/utils.js';
@@ -9,14 +8,12 @@ import { cardValueToString } from '../../utils/utils.js';
 interface ButtonProps {
   value: number,
   onClick: ()=> void;
-  selectedValue: number | null;
   disabled?: boolean;
   lastPlayValue: number | null;
 }
 
 const CardSelectButton = (props: ButtonProps) => {
   const baseClass ='xl:m-3 m-1 flex-1 rounded-xl p-3 duration-300 ';
-  const selectedClass = baseClass.concat('bg-green-500 hover:bg-green-400 hover:cursor-pointer');
   const defaultClass = baseClass.concat('bg-emerald-400 hover:bg-green-400 hover:cursor-pointer');
   const disabledClassName=baseClass.concat('bg-emerald-400/50 cursor-not-allowed');
 
@@ -24,11 +21,9 @@ const CardSelectButton = (props: ButtonProps) => {
 
   const disabled = props.disabled || valueSmallerThanLastPlay;
 
-  const selected = props.selectedValue === props.value;
-
   return (
     <button 
-      className={disabled ? disabledClassName : selected ? selectedClass : defaultClass}
+      className={disabled ? disabledClassName : defaultClass}
       onClick={()=>props.onClick()}
       disabled={disabled}
     >
@@ -48,8 +43,6 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
   const selectedCardsCount= props.selectedCards.length;
   const lastPlay = props.lastPlay;
 
-  const [selectedValue, setSelectedValue] = useState<number| null>(null);
-
   const labelText = selectedCardsCount > 1 ? `Valitse minä kortteina haluat pelata ${selectedCardsCount} korttia` : 'Valitse minä korttina haluat pelata yhden kortin';
 
   // Disabled conditions:
@@ -62,20 +55,16 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
 
   const dispatch = useAppDispatch();
 
-  const onPlay = () => {
-    if (selectedValue){
-      const statement: Statement = {
-        amount: selectedCardsCount,
-        value: selectedValue,
-      };
-      dispatch(playCards(statement));
-      props.toggleModal();
-      setSelectedValue(null);
-    }
+  const play = (value: number) => {
+    const statement: Statement = {
+      amount: selectedCardsCount,
+      value: value,
+    };
+    dispatch(playCards(statement));
+    props.toggleModal();
   };
 
   const onClose = () => {
-    setSelectedValue(null);
     props.toggleModal();
   };
 
@@ -90,10 +79,9 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
               key={value}
               value={value}
               disabled={cantPlayNonCourt || lastPlayIs2}
-              selectedValue={selectedValue}
               lastPlayValue={lastPlay.statement.value}
               onClick={() => {
-                setSelectedValue(value);
+                play(value);
               }}
             />
           ))}
@@ -104,10 +92,9 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
               key={value}
               value={value}
               disabled={cantPlayNonCourt || lastPlayIs2}
-              selectedValue={selectedValue}
               lastPlayValue={lastPlay.statement.value}
               onClick={() => {
-                setSelectedValue(value);
+                play(value);
               }}
             />
           ))}
@@ -116,10 +103,9 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             <CardSelectButton
               key={value}
               value={value}
-              selectedValue={selectedValue}
               lastPlayValue={lastPlay.statement.value}
               onClick={() => {
-                setSelectedValue(value);
+                play(value);
               }}
               disabled={cantPlayCourt || lastPlayIs2}
             />
@@ -130,38 +116,29 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           <CardSelectButton
             value={10}
             disabled={selectedCardsCount > 1 || cantPlay10 || lastPlayIs2}
-            selectedValue={selectedValue}
             lastPlayValue={lastPlay.statement.value}
             onClick={() => {
-              setSelectedValue(10);
+              play(10);
             }}
           />
           <CardSelectButton
             value={1}
             disabled={selectedCardsCount > 1 || cantPlayAce || lastPlayIs2}
-            selectedValue={selectedValue}
             lastPlayValue={lastPlay.statement.value}
             onClick={() => {
-              setSelectedValue(1);
+              play(1);
             }}
           />
           <CardSelectButton
             value={2}
             disabled={selectedCardsCount > 1}
-            selectedValue={selectedValue}
             lastPlayValue={lastPlay.statement.value}
             onClick={() => {
-              setSelectedValue(2);
+              play(2);
             }}
           />
         </div>
-        <Button
-          text="Pelaa"
-          disabled={selectedValue === null}
-          onClick={() => {
-            onPlay();
-          }}
-        />
+
       </div>
     </Modal>
   );

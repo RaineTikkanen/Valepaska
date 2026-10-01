@@ -2,7 +2,7 @@ import Hand from './Hand';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
-import {leaveRoom, selectUsers} from '../Lobby/socketSlice.js';
+import {leaveRoom, selectPlayers} from '../Lobby/socketSlice.js';
 import { useNavigate } from 'react-router';
 import PlayCardsModal from './PlayCardsModal';
 import LastPlayView from './LastPlayView.js';
@@ -10,10 +10,17 @@ import { doubt } from './handSlice.js';
 import logger from '../../utils/logger.ts';
 import { selectSelectedCards } from './handSlice.js';
 import {resetGame, selectGameState} from './gameSlice.ts';
-import type {User} from '../../types/game.ts';
+import type {User} from '../../../../backend/types/game.type.ts';
 
 
-const UserElement = ({user, isActive, position}:{user:string, isActive:boolean, position?: number}) => {
+interface UserElementProps {
+  user: string;
+  isActive: boolean;
+  position?: number;
+  amountOfCards: number;
+}
+
+const UserElement = ({user, isActive, position, amountOfCards}:UserElementProps) => {
   const positionColor =
     position === 1 ? 'bg-yellow-500' :
       position === 2 ? 'bg-gray-400' :
@@ -29,8 +36,9 @@ const UserElement = ({user, isActive, position}:{user:string, isActive:boolean, 
             <p>{position}</p>
           </div>
       }
-      <div className={`flex min-w-30 justify-center rounded-4xl px-2 py-6  ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
+      <div className={`flex min-w-30 flex-col items-center justify-center rounded-4xl px-2 py-6  ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
         <p>{user}</p>
+        <p>kortit: {amountOfCards}</p>
       </div>
     </div>
   );
@@ -39,18 +47,19 @@ const UserElement = ({user, isActive, position}:{user:string, isActive:boolean, 
 
 
 const UserList = ({ turn, winners }: { turn: string, winners: Array<User> }) => {
-  const users = useAppSelector(selectUsers);
+  const players = useAppSelector(selectPlayers);
 
   const userId = localStorage.getItem('userId');
 
   return (
     <div className="flex flex-row justify-center gap-5">
-      {users.map((user) => (
+      {players.map((player) => (
         <UserElement
-          key={user.id}
-          user={user.id === userId ? 'Sinä' : user.name}
-          isActive={turn === user.id}
-          position={winners.findIndex(u => u.id === user.id)+1}
+          key={player.user.id}
+          user={player.user.id === userId ? 'Sinä' : player.user.name}
+          isActive={turn === player.user.id}
+          amountOfCards={player.amountOfCards}
+          position={winners.findIndex(u => u.id === player.user.id)+1}
         />
       ))}
     </div>
@@ -111,7 +120,11 @@ const Game = () => {
         selectedCards={selectedCards}
         lastPlay={game.lastPlay}
       />
-      <div>
+      <div className="flex items-center justify-center p-5">
+        <p>Pakka: {game.cardsInDeck}</p>
+
+      </div>
+      <div className="absolute">
         <Button
           text="Poistu pelistä"
           onClick={onLeaveGame}

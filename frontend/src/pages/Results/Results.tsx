@@ -1,5 +1,5 @@
 import {useAppSelector} from '../../hooks/redux.ts';
-import {selectUsers} from '../Lobby/socketSlice.ts';
+import {selectPlayers} from '../Lobby/socketSlice.ts';
 import {selectStatus, selectWinners} from '../Game/gameSlice.ts';
 import {useNavigate} from 'react-router';
 import {useEffect} from 'react';
@@ -12,10 +12,10 @@ const Results = () => {
     if (status !== 'FINISHED') void navigate('/lobby');
   }, []);
 
-  const users = useAppSelector(selectUsers);
+  const players = useAppSelector(selectPlayers);
   const winners = useAppSelector(selectWinners);
   const userId = localStorage.getItem('userId');
-  const loser = users.find(u => !winners.some(w => w===u));
+  const loser = players.find(p => !winners.some(w => w.id===p.user.id));
   if(!loser)return;
 
   return(
@@ -28,8 +28,8 @@ const Results = () => {
         </div>
       ))}
       <div className="flex flex-row">
-        <p className="px-5 font-mono">{users.length}</p>
-        <p className={`font-mono ${loser.id===userId ? 'font-semibold' : ''}`}>{loser.name}</p>
+        <p className="px-5 font-mono">{players.length}</p>
+        <p className={`font-mono ${loser.user.id===userId ? 'font-semibold' : ''}`}>{loser.user.name}</p>
       </div>
     </div>
   );

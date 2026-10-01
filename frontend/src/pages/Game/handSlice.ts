@@ -1,7 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
-import type { Card, Statement } from '../../types/game.js';
+import type { Statement } from '../../../../backend/types/game.type.ts';
+import type {Card} from '../../../../backend/types/deck.type.ts';
 
 export interface HandState {
   cards: Array<Card>;

@@ -2,9 +2,10 @@ import type { Middleware } from 'redux';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { AppDispatch, RootState } from '../store.js';
 import { isAction } from '@reduxjs/toolkit';
-import { socket } from '../services/socket.js';
+import { socket } from '../socket.ts';
 import { isStatement, isString } from '../utils/typeGuards.js';
-import type {Card, GameStateUpdate, User} from '../types/game.js';
+import type {GameStateUpdate, GamePlayer} from '../../../backend/types/game.type.ts';
+import type {Card} from '../../../backend/types/deck.type.ts';
 
 import { 
   connect, 
@@ -13,7 +14,7 @@ import {
   disconnected, 
   createRoom, 
   updateRoomId, 
-  updateUsers,
+  updatePlayers,
   joinRoom,
   leaveRoom,
 } from '../pages/Lobby/socketSlice.js';
@@ -34,7 +35,7 @@ import {
 
 import {playCards, setCards, doubt, removeCards} from '../pages/Game/handSlice.js';
 
-import { SocketEvents } from '../services/socket.js';
+import { SocketEvents } from '../socket.ts';
 import logger from '../utils/logger.ts';
 
 
@@ -49,10 +50,10 @@ socket.on(SocketEvents.DISCONNECT, () => {
   if (storeRef) storeRef.dispatch(disconnected());
 });
 
-socket.on(SocketEvents.ROOM_UPDATE, (roomId: string, users: Array<User>) => {
+socket.on(SocketEvents.ROOM_UPDATE, (roomId: string, players: Array<GamePlayer>) => {
   if (storeRef) {
-    storeRef.dispatch(updateRoomId({roomId: roomId}));
-    storeRef.dispatch(updateUsers({users: users}));
+    storeRef.dispatch(updateRoomId(roomId));
+    storeRef.dispatch(updatePlayers(players));
   }
 });
 
@@ -66,6 +67,7 @@ socket.on(SocketEvents.HAND_UPDATE, (cards: Array<Card>)=>{
 
 socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   if(storeRef){
+    storeRef.dispatch(updatePlayers(gameState.players));
     storeRef.dispatch(updateGameState(gameState));
   }
 });

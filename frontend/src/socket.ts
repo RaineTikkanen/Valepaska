@@ -1,0 +1,46 @@
+import { io, Socket } from 'socket.io-client';
+import { BACKEND_URL } from './utils/config.ts';
+// import type {GameStateUpdate, GamePlayer, Statement, User} from '../../backend/services/gameService.type.ts';
+// import type {Card} from '../../backend/deck/deck.type.ts';
+
+import type { ClientToServerEvents, ServerToClientEvents } from '../../backend/socket.ts';
+
+
+
+export const SocketEvents = {
+  CONNECT: 'connect',
+  DISCONNECT: 'disconnect',
+  ERROR: 'connect_error',
+
+  //ServerToClient
+  ROOM_UPDATE: 'roomUpdate',
+  GAME_STARTS: 'gameStarts',
+  GAME_STATE_UPDATE: 'gameStateUpdate',
+  HAND_UPDATE: 'handUpdate',
+  TURN_UPDATE: 'turnUpdate',
+  DOUBTED: 'doubted',
+  DOUBT_RESULT: 'doubtResult',
+  ABOUT_TO_CLEAR: 'aboutToClear',
+  GAME_ENDS: 'gameEnds',
+
+  //ClientToServer
+  CREATE_ROOM: 'createRoom',
+  JOIN_ROOM: 'joinRoom',
+  LEAVE_ROOM: 'leaveRoom',
+  START_GAME: 'startGame',
+  DOUBT: 'doubt',
+  PLAY: 'play',
+} as const;
+
+
+
+
+export const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(BACKEND_URL, {
+  autoConnect: false,
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  timeout: 2000,
+  forceNew: false,
+  path: '/socket.io',
+});

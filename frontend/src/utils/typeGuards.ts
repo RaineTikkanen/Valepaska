@@ -1,4 +1,4 @@
-import type { Statement } from '../types/game';
+import type { Statement } from '../../../backend/types/game.type.ts';
 
 export const isString = (text: unknown): text is string => {
   return typeof text === 'string' || text instanceof String;

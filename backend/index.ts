@@ -4,63 +4,11 @@ import { Server } from 'socket.io';
 import { createServer } from 'node:http';
 import { PORT, REDIS_URL} from './utils/config.js';
 import gameService from './services/gameService.js';
-import type {GameStateUpdate, Statement, User} from './services/gameService.type.js';
-import type { Card } from './deck/deck.type.js';
 import { v7 as uuidv7 } from 'uuid';
 import logger from './utils/logger.js';
-// import path from 'node:path';
+import type {ClientToServerEvents, ServerToClientEvents, SocketData} from './socket.js';
 
-export const SocketEvents = {
-  CONNECT: 'connect',
-  DISCONNECT: 'disconnect',
 
-  //ServerToClient
-  ROOM_UPDATE: 'roomUpdate',
-  GAME_STARTS: 'gameStarts',
-  GAME_STATE_UPDATE: 'gameStateUpdate',
-  TURN_UPDATE: 'turnUpdate',
-  HAND_UPDATE: 'handUpdate',
-  DOUBTED: 'doubted',
-  DOUBT_RESULT: 'doubtResult',
-  ABOUT_TO_CLEAR: 'aboutToClear',
-  GAME_ENDS: 'gameEnds',
-
-  //ClientToServer
-  CREATE_ROOM: 'createRoom',
-  JOIN_ROOM: 'joinRoom',
-  LEAVE_ROOM: 'leaveRoom',
-  START_GAME: 'startGame',
-  DOUBT: 'doubt',
-  PLAY: 'play',
-} as const;
-
-export interface ServerToClientEvents {
-  roomUpdate: (roomId: string, players: Array<User>) => void;
-  gameStarts:() => void;
-  gameStateUpdate: (gameState: GameStateUpdate) => void;
-  turnUpdate: (turn: string) => void;
-  handUpdate: (cards: Array<Card>) => void;
-  doubted: (doubter: string)=> void;
-  doubtResult: (cards: Array<Card>) => void;
-  aboutToClear: ()=>void;
-  gameEnds:() => void;
-}
-
-export interface ClientToServerEvents {
-  createRoom: (user: User, callback:(result: string) => void) => void;
-  joinRoom: (roomId: string, user: User, callback: (result: string) => void) => void;
-  leaveRoom: (callback:(result: string) => void) => void;
-  startGame: (callback: (result: string) => void) => void;
-  doubt: (callback: (result: string) => void,) => void;
-  play: (cards: Array<Card>, statement: Statement, callback: (result: string) => void,) => void;
-  getGameState: () => void;
-}
-
-export interface SocketData {
-  userId: string;
-  roomId: string;
-  userName: string;
-}
 
 const app = express();
 const server = createServer(app);

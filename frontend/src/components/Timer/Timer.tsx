@@ -1,3 +1,7 @@
+
+//This whole element is created by AI and will be replaced or atleast modified
+
+
 import { useEffect, useState } from 'react';
 
 interface TimerProps {
