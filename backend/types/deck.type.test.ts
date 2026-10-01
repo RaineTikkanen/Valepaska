@@ -2,7 +2,7 @@ import {describe, it} from 'node:test';
 import assert from 'node:assert/strict';
 import { parseCardValue, parseCardSuit, parseCardName, parseCard} from './deck.type.js';
 import { CardValues, CardSuits} from './deck.type.js';
-import getShuffledDeck from './deck.js';
+import getShuffledDeck from '../deck/deck.js';
 
 /*eslint-disable @typescript-eslint/no-floating-promises*/
 

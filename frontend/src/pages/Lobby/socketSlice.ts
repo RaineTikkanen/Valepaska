@@ -1,19 +1,19 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
-import type {User} from '../../types/game.ts';
+import type {GamePlayer} from '../../../../backend/types/game.type.ts';
 
 
 export interface SocketState {
   isConnected: boolean;
   roomId: string;
-  users: Array<User>;
+  players: Array<GamePlayer>;
 }
 
 const initialState: SocketState = {
   isConnected: false,
   roomId: '',
-  users: [],
+  players: [],
 };
 
 export const socketSlice = createSlice({
@@ -32,7 +32,7 @@ export const socketSlice = createSlice({
     disconnected: (state) => {
       state.isConnected = false;
       state.roomId = '';
-      state.users = [];
+      state.players = [];
     },
     createRoom: () => {
       return;
@@ -41,14 +41,14 @@ export const socketSlice = createSlice({
       return;
     },
     leaveRoom: (state) => {
-      state.users = [];
+      state.players = [];
       state.roomId = '';
     },
-    updateRoomId: (state, action: PayloadAction<{roomId: string}>) => {
-      state.roomId = action.payload.roomId;
+    updateRoomId: (state, action: PayloadAction<string>) => {
+      state.roomId = action.payload;
     },
-    updateUsers: (state, action: PayloadAction<{users: Array<User>}>) => {
-      state.users = action.payload.users;
+    updatePlayers: (state, action: PayloadAction<Array<GamePlayer>>) => {
+      state.players = action.payload;
     },
   }
 });
@@ -63,10 +63,10 @@ export const {
   joinRoom,
   leaveRoom,
   updateRoomId,
-  updateUsers,
+  updatePlayers,
 } = socketSlice.actions;
 
 export const selectSocketState = (state: RootState) => state.socket;
-export const selectUsers = (state: RootState) => state.socket.users;
+export const selectPlayers = (state: RootState) => state.socket.players;
 
 export default socketSlice.reducer;

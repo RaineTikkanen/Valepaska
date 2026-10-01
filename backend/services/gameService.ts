@@ -7,12 +7,12 @@ import {
   type ClientToServerEvents,
   type ServerToClientEvents,
   type SocketData,
-} from '../index.js';
-import type {Statement, User} from './gameService.type.js';
-import { parseStatement, parseUser, } from './gameService.type.js';
-import type {GameState, Play, Player} from '../redis/controller.type.js';
-import type { Card } from '../deck/deck.type.js';
-import { parseCard } from '../deck/deck.type.js';
+} from '../socket.js';
+import type {Statement, User, GamePlayer} from '../types/game.type.js';
+import { parseStatement, parseUser, } from '../types/game.type.js';
+import type {GameState, Play, RedisPlayer} from '../types/controller.type.js';
+import type { Card } from '../types/deck.type.js';
+import { parseCard } from '../types/deck.type.js';
 import { timeout } from '../utils/utils.js';
 import helpers from './helpers.js';
 import logger from '../utils/logger.js';
@@ -50,7 +50,6 @@ const gameService = (
 
     await roomUpdate(roomId);
   };
- 
 
   const joinRoom = async (
     roomId: string,
@@ -89,15 +88,14 @@ const gameService = (
   const roomUpdate = async (roomId: string) => {
     try{
       const parsedRoomId = roomId;
-      const users = await redisController.getPlayersInAGame(parsedRoomId);
+      const players = await redisController.getPlayersInAGame(parsedRoomId);
 
-      if (users.length === 0) {
+      if (players.length === 0) {
         await redisController.deleteRoom(parsedRoomId);
         return;
       }
-      logger.child({users: users}).debug('[roomupdate]');
 
-      const usersToSend = users.map((p ) => p.user);
+      const usersToSend: Array<GamePlayer> = players.map(p => ({user: p.user, amountOfCards: 5}));
 
       io.to(parsedRoomId).emit(SocketEvents.ROOM_UPDATE, parsedRoomId, usersToSend);
     }catch(e){
@@ -121,7 +119,6 @@ const gameService = (
       const newPlayers = gameState.players.map((p)=>{
         return {...p, hand: newDeck.splice(0,5)};
       });
-      logger.child({newPlayers: newPlayers}).debug('[start game]');
 
 
       const starterIndex = getRandomInt(gameState.players.length);
@@ -136,6 +133,8 @@ const gameService = (
       };
       await redisController.setGameState(roomId, newGameState);
       io.to(roomId).emit(SocketEvents.GAME_STARTS);
+      const gameStateUpdate = helpers.createGameStateUpdateFromGameState(newGameState);
+      io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
 
       //send dealt cards to clients
       for (const player of newPlayers) {
@@ -377,7 +376,7 @@ const gameService = (
 
       //get game and send to clients
       const gameStateUpdate = helpers.createGameStateUpdateFromGameState(newGameState);
-      logger.child({gameStateUpdate: gameStateUpdate}).debug('[gameService] handlePlay: gameStateUpdate sent to backend');
+      logger.child({gameStateUpdate: gameStateUpdate}).debug('[gameService] handlePlay: gameStateUpdate sent to frontend');
       io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
 
 
@@ -424,8 +423,7 @@ const gameService = (
    * @param winners
    * @param roomId
    */
-  const advanceTurn = async (users: Array<Player>, turnId: string, winners: Array<User>, roomId: string ) =>{
-    logger.child({users: users, winners: winners}).debug('[gameService] advanceTurn');
+  const advanceTurn = async (users: Array<RedisPlayer>, turnId: string, winners: Array<User>, roomId: string ) =>{
 
     const nextTurn = helpers.getNextTurnId(users, turnId, winners);
     await redisController.setTurn(roomId, nextTurn);
@@ -496,7 +494,7 @@ const gameService = (
     }
   };
 
-  const updateWinners = (winners: Array<User>, lastPlay: Play, players: Array<Player>): Array<User> => {
+  const updateWinners = (winners: Array<User>, lastPlay: Play, players: Array<RedisPlayer>): Array<User> => {
     const newWinners = winners;
     logger.debug('[gameService] updateWinners');
     //Check if any new user's hand is empty and someone has played after that user

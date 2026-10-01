@@ -89,8 +89,8 @@ const Lobby = () => {
     );
   }
 
-  const UserList = socket.users.map((user) => (
-    <li key={user.id}>{user.name}</li>
+  const UserList = socket.players.map(player => (
+    <li key={player.user.id}>{player.user.name}</li>
   ));
 
   const copyToClipBoard = async () =>{
@@ -146,7 +146,7 @@ const Lobby = () => {
         <Button
           text="Aloita peli"
           onClick={() => dispatch(startGame())}
-          disabled={socket.users.length < 2}
+          disabled={socket.players.length < 2}
         />
       </div>
     </div>

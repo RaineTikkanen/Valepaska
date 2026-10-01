@@ -4,7 +4,7 @@ import cardBack from '../../assets/cardBack.svg';
 import Timer from '../../components/Timer';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { setAboutToClear } from './gameSlice.js';
-import type {Card} from '../../types/game.ts';
+import type {Card} from '../../../../backend/types/deck.type.ts';
 import { selectGameState } from './gameSlice.js';
 
 const DoubtResultView = ({doubtWasCorrect, doubtResult}:{doubtWasCorrect: boolean, doubtResult: Array<Card>} ) =>{

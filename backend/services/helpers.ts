@@ -1,8 +1,7 @@
-import type { GameState } from '../redis/controller.type.js';
-import type {GameStateUpdate, User} from './gameService.type.js';
-import type { Player } from '../redis/controller.type.js';
-import type { Card } from '../deck/deck.type.js';
-import logger from '../utils/logger.js';
+import type { GameState } from '../types/controller.type.js';
+import type {GameStateUpdate, User} from '../types/game.type.js';
+import type { RedisPlayer as RedisPlayer } from '../types/controller.type.js';
+import type { Card } from '../types/deck.type.js';
 
 /**
  * Returns GameStateUpdate from GameState
@@ -10,7 +9,9 @@ import logger from '../utils/logger.js';
  * @returns gameStateUpdate
 */
 const createGameStateUpdateFromGameState = (gameState: GameState) => {
+  const players = gameState.players.map(p => ({user: p.user, amountOfCards: p.hand.length}));
   const gameStateUpdate: GameStateUpdate = {
+    players:players,
     winners: gameState.winners,
     lastPlay: {
       statement: gameState.lastPlay.statement,
@@ -18,17 +19,21 @@ const createGameStateUpdateFromGameState = (gameState: GameState) => {
     },
     amountOfCardsInPlay: gameState.playDeck.length,
     sameCardsInPlay: gameState.statementHistory.amount,
+    cardsInDeck: gameState.deck.length,
   };
 
   return gameStateUpdate;
 };
 
-
-const updatePlayerHand = (players: Array<Player>, userId: string, newHand: Array<Card>) => {
+/**
+ *
+ * @param {Array<Player>}players
+ * @param userId
+ * @param newHand
+ */
+const updatePlayerHand = (players: Array<RedisPlayer>, userId: string, newHand: Array<Card>) => {
   return players.map(p => {
     if(p.user.id === userId){
-      logger.debug(`userId: ${p.user.id}`);
-      logger.debug(`hand: ${JSON.stringify(p.hand)}`);
       p.hand = newHand;
     }
     return p;
@@ -41,7 +46,7 @@ const updatePlayerHand = (players: Array<Player>, userId: string, newHand: Array
 * @param {string[]} users array of all users
 * @returns {number} index position of userId in users array
 */
-const getIndexInUsersArray = (userId: string, users: Array<Player>): number=> {
+const getIndexInUsersArray = (userId: string, users: Array<RedisPlayer>): number=> {
   const index= users.findIndex(p => p.user.id === userId);
   if(index===-1) throw new Error('Cant find user index');
   return index;
@@ -50,11 +55,11 @@ const getIndexInUsersArray = (userId: string, users: Array<Player>): number=> {
 /**
  *
  * @param  {user[]} users array of all users
- * @param {number} turnIndex index of current turn
+ * @param {string} turn id of a current player
  * @param {string[]} winners array of Ids from users that are finished
  * @returns {string} next player id
  */
-const getNextTurnId = (users: Array<Player>, turn: string, winners: Array<User>): string => {
+const getNextTurnId = (users: Array<RedisPlayer>, turn: string, winners: Array<User>): string => {
   let index = getIndexInUsersArray(turn, users);
   let userId = turn;
   do {

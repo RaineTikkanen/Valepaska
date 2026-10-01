@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type {Play, Card, GameStateUpdate, User} from '../../types/game.js';
+import type {Play, GameStateUpdate, User} from '../../../../backend/types/game.type.ts';
+import type {Card} from '../../../../backend/types/deck.type.ts';
 import type {RootState} from '../../store.ts';
 
 export interface GameState {
@@ -13,6 +14,7 @@ export interface GameState {
   doubter: string;
   doubtResult: Array<Card> | null;
   aboutToClear: boolean,
+  cardsInDeck: number,
 }
 
 const initialState: GameState = {
@@ -34,6 +36,7 @@ const initialState: GameState = {
   sameCardsInPlay: 0,
   doubtResult: null,
   aboutToClear: false,
+  cardsInDeck: 0,
 };
 
 export const gameSlice = createSlice({
@@ -58,6 +61,7 @@ export const gameSlice = createSlice({
       state.winners = action.payload.winners;
       state.sameCardsInPlay = action.payload.sameCardsInPlay;
       state.amountOfCardsInPlay = action.payload.amountOfCardsInPlay;
+      state.cardsInDeck = action.payload.cardsInDeck;
     },
     setDoubter: (state, action: PayloadAction<string>) =>{
       state.doubter = action.payload;
