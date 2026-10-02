@@ -17,7 +17,9 @@ const io = new Server<
   ServerToClientEvents,
   Record<string, never>,
   SocketData
->(server);
+>(server, {
+  connectionStateRecovery: {}
+});
 
 if(process.env.NODE_ENV !== 'development') {
   app.use(express.static('dist'));

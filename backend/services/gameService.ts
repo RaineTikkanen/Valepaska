@@ -507,36 +507,12 @@ const gameService = (
     return newWinners;
   };
 
-  const disconnect = async ()=>{
-    const userId = socket.data.userId;
-    const roomId = socket.data.roomId;
-    if(userId && roomId) {
-      try {
-        logger.child({userId: userId, roomId: roomId}).debug('[gameService] disconnecting');
-        const players = await redisController.getPlayersInAGame(roomId);
-        if(players.length===1){
-          await redisController.deleteRoom(roomId);
-          logger.debug(`[gameService] last user left room ${roomId}, room deleted` );
-        }else {
-          const index = helpers.getIndexInUsersArray(userId, players);
-          await redisController.removePlayerFromRoom(roomId, index);
-          logger.debug(`[gameService] user ${userId} removed from room ${roomId}` );
-        }
-      } catch (err) {
-        logger.error(err);
-      }
-    }
-  };
-
-
-
   socket.on(SocketEvents.CREATE_ROOM, createRoom);
   socket.on(SocketEvents.JOIN_ROOM, joinRoom);
   socket.on(SocketEvents.START_GAME, startGame);
   socket.on(SocketEvents.LEAVE_ROOM, leaveRoom);
   socket.on(SocketEvents.PLAY, handlePlay);
   socket.on(SocketEvents.DOUBT, handleDoubt);
-  socket.on('disconnect', disconnect);
 };
 
 export default gameService;
