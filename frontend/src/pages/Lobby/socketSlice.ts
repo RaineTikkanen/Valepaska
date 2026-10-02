@@ -29,10 +29,11 @@ export const socketSlice = createSlice({
     connected: (state) => {
       state.isConnected = true;
     },
-    disconnected: (state) => {
-      state.isConnected = false;
-      state.roomId = '';
-      state.players = [];
+    disconnected: () => {
+      // state.isConnected = false;
+      // state.roomId = '';
+      // state.players = [];
+      return;
     },
     createRoom: () => {
       return;
