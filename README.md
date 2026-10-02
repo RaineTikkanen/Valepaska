@@ -12,12 +12,12 @@ cd frontend && npm i && cd ..
 ```
 ### Running in development mode
 ```
-docker compose -f docker-compose.dev up -d
+docker compose -f docker-compose.dev.yml up -d
 ```
 
 ### Running in prod mode
 ```
-docker compose -f docker-compose.dev up -d --build
+docker compose -f docker-compose.yml up -d --build
 ```
 
 ### Technologies and libraries
