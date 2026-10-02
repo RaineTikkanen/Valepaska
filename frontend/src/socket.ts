@@ -23,7 +23,6 @@ export interface ClientToServerEvents {
   startGame: (callback: (result: string) => void) => void;
   doubt: (callback: (result: string) => void,) => void;
   play: (cards: Array<Card>, statement: Statement, callback: (result: string) => void,) => void;
-  getGameState: () => void;
 }
 
 export const SocketEvents = {

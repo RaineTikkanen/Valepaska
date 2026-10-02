@@ -45,7 +45,10 @@ const createRoom = async (roomId: string ) => {
       },
     });
 
-  if(!result) throw new Error('Error creating room');
+  if(!result) throw new Error('Error creating room' );
+
+  //Set game to expire in 6 hours
+  await client.expire(roomId, 21600);
 };
 
 /**
