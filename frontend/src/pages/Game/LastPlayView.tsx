@@ -33,7 +33,7 @@ const LastPlayView = () => {
   const dispatch = useAppDispatch();
 
 
-  if (game.lastPlay.statement.value === 0 || game.lastPlay.statement.amount === 0) return;
+  if (!game.lastPlay) return;
 
   const value = game.lastPlay.statement.value;
   const numberImage = `N${value}` as keyof typeof cardNumbers;

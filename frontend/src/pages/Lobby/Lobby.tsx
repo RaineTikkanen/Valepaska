@@ -4,71 +4,43 @@ import { useNavigate } from 'react-router';
 import useField from '../../hooks/useField';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { connect, createRoom, joinRoom, leaveRoom, selectSocketState } from './socketSlice.js';
-import { startGame, selectStatus } from '../Game/gameSlice.js';
-import { isString } from '../../utils/typeGuards.js';
-import { BACKEND_URL } from '../../utils/config.js';
+import {startGame, selectStatus} from '../Game/gameSlice.js';
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
-import logger from '../../utils/logger';
 import TextInput from '../../components/TextInput';
+import {selectUserState} from './userSlice.ts';
 
-
-
-const parseUserId = (result: unknown) => {
-  if (result instanceof Object && 'id' in result && isString(result.id)) {
-    return result.id;
-  } else throw new Error('Invalid userId');
-
-};
 
 const Lobby = () => {
-  const userName= localStorage.getItem('userName');
-  const [userId, setUserId] = useState(localStorage.getItem('userId'));
   const [copied, setCopied] = useState(false);
   const inputGameId = useField('text', 'Game ID');
   const navigate = useNavigate();
+  const [connected, setConnected] = useState(false);
 
   const socket = useAppSelector(selectSocketState);
   const gameStatus = useAppSelector(selectStatus);
   const dispatch = useAppDispatch();
-
-
-
-  const getGuestUserId = async () => {
-    try {
-      const response = await fetch(BACKEND_URL + '/api/userId');
-      const result: unknown = await response.json();
-      const userId = parseUserId(result);
-
-      setUserId(userId);
-      localStorage.setItem('userId', userId);
-    } catch (e) {
-      if(e && typeof e === 'object') logger.error('ERROR: ', e);
-      else logger.error('UNKNOWN ERROR');
-    }
-  };
-
-  const init = async () => {
-    if (!userId) {
-      await getGuestUserId();
-    }
-  };
+  const user = useAppSelector(selectUserState);
 
   useEffect(() => {
-    if(!userName){
-      void navigate('/');
-    }
-    else {
-      init().catch((e) => logger.error('error',e));
+    if(socket.status === 'DISCONNECTED') {
       dispatch(connect());
     }
-  }, []);
+    if(socket.status === 'CONNECTED') {
+      setConnected(true);
+    }
+  }, [socket.status]);
 
   useEffect(() => {
-    if (gameStatus==='ACTIVE') {
+    if (gameStatus==='GAME') {
       void navigate('/game');
     }
   }, [gameStatus]);
 
+  useEffect(() => {
+    if(!user.userId){
+      void navigate('/');
+    }
+  }, [user.userId]);
 
 
   const createGame = () => {
@@ -83,7 +55,7 @@ const Lobby = () => {
     dispatch(leaveRoom());
   };
 
-  if (!socket.isConnected || !userId) {
+  if (!connected) {
     return (
       <h2 className="animate-pulse">Yhdistetään...</h2>
     );
@@ -98,7 +70,6 @@ const Lobby = () => {
     setCopied(true);
     setTimeout(()=>setCopied(false), 1500);
   };
-
 
 
   return (

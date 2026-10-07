@@ -10,16 +10,22 @@ import type { Card } from '../types/deck.type.js';
 */
 const createGameStateUpdateFromGameState = (gameState: GameState) => {
   const players = gameState.players.map(p => ({user: p.user, amountOfCards: p.hand.length}));
+
+  const lastPlay = gameState.lastPlay ? {
+    statement: gameState.lastPlay.statement,
+    user: gameState.lastPlay.user,
+  } : null;
+
+  const sameCardsInPlay = gameState.statementHistory ? gameState.statementHistory.amount : 0;
+
   const gameStateUpdate: GameStateUpdate = {
-    players:players,
+    players,
     winners: gameState.winners,
-    lastPlay: {
-      statement: gameState.lastPlay.statement,
-      user: gameState.lastPlay.user,
-    },
+    lastPlay,
     amountOfCardsInPlay: gameState.playDeck.length,
-    sameCardsInPlay: gameState.statementHistory.amount,
+    sameCardsInPlay,
     cardsInDeck: gameState.deck.length,
+    clientStatus: gameState.clientStatus,
   };
 
   return gameStateUpdate;

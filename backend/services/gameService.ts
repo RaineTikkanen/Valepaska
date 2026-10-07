@@ -10,7 +10,8 @@ import {
 } from '../socket.js';
 import type {Statement, User, GamePlayer} from '../types/game.type.js';
 import { parseStatement, parseUser, } from '../types/game.type.js';
-import type {GameState, Play, RedisPlayer} from '../types/controller.type.js';
+import type {ClientStatus, Play, RedisPlayer} from '../types/controller.type.js';
+import { GameState } from '../types/controller.type.js';
 import type { Card } from '../types/deck.type.js';
 import { parseCard } from '../types/deck.type.js';
 import { timeout } from '../utils/utils.js';
@@ -34,10 +35,10 @@ const gameService = (
 ) => {
 
   const joinRoomInternal = async (roomId: string, user: User) => {
-    const isActive = await redisController.getIsActive(roomId);
+    const clientStatus = await redisController.getClientStatus(roomId);
     const players = await redisController.getPlayersInAGame(roomId);
 
-    if(isActive) throw new Error('game is already active');
+    if(clientStatus !== 'LOBBY') throw new Error('game is already active');
     if(players.length>3) throw new Error('Room full');
 
     await redisController.addUserToRoom(roomId, user);
@@ -103,6 +104,31 @@ const gameService = (
     }
   };
 
+  const requestRoomUpdate = async (roomId: string, user: User, callback: (result: string) => void) => {
+    try{
+      const parsedUser = parseUser(user);
+      logger.debug(`[gameService] requestRoomUpdate: user: ${parsedUser.id} requesting room update`);
+      const parsedRoomId = parseId(roomId);
+      const gameState = await redisController.getGameState(parsedRoomId);
+      socket.data.userId = parsedUser.id;
+      socket.data.userName = parsedUser.name;
+      socket.data.roomId = parsedRoomId;
+      await socket.join(parsedRoomId);
+      await socket.join(parsedUser.id);
+      const usersToSend: Array<GamePlayer> = gameState.players.map(p => ({user: p.user, amountOfCards: 5}));
+      io.to(parsedUser.id).emit(SocketEvents.ROOM_UPDATE, parsedRoomId, usersToSend);
+      const gameStateUpdate = helpers.createGameStateUpdateFromGameState(gameState);
+      io.to(parsedUser.id).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
+      io.to(parsedUser.id).emit(SocketEvents.TURN_UPDATE, gameState.turn);
+      const userIndex = helpers.getIndexInUsersArray(parsedUser.id, gameState.players);
+      io.to(parsedUser.id).emit(SocketEvents.HAND_UPDATE, gameState.players[userIndex].hand);
+
+      callback('OK');
+    }catch {
+      callback('Err');
+    }
+  };
+
   const startGame = async (
     callback: (result: string) => void,
   ) => {
@@ -126,13 +152,12 @@ const gameService = (
 
       const newGameState: GameState = {
         ...gameState,
-        isActive: true,
+        clientStatus: 'GAME',
         turn: starterId,
         deck: newDeck,
         players: newPlayers,
       };
       await redisController.setGameState(roomId, newGameState);
-      io.to(roomId).emit(SocketEvents.GAME_STARTS);
       const gameStateUpdate = helpers.createGameStateUpdateFromGameState(newGameState);
       io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
 
@@ -158,6 +183,8 @@ const gameService = (
       const userId = socket.data.userId;
 
       const users = await redisController.getPlayersInAGame(roomId);
+      const clientStatus = await redisController.getClientStatus(roomId);
+
       if(users.length===1){
         await redisController.deleteRoom(roomId);
       }else {
@@ -168,7 +195,9 @@ const gameService = (
       await socket.leave(userId);
 
       callback('OK');
-      await roomUpdate(roomId);
+      if(clientStatus !== 'RESULTS') {
+        await roomUpdate(roomId);
+      }
     } catch (e) {
       console.error('ERROR: ', e);
       callback('ERR');
@@ -185,9 +214,10 @@ const gameService = (
     const userName= socket.data.userName;
     try {
       const gameState = await redisController.getGameState(roomId);
+      if(!gameState.lastPlay) throw new Error('No last play. Can\'t doubt');
       if(gameState.lastPlay.user.id === userId) throw new Error('Can\'t doubt own play');
-      logger.child({status: gameState.status}).debug('[gameService] doubt');
-      if(gameState.status !== 'IDLE' && gameState.status !== 'WAITING_DOUBT') throw new Error(`Cant doubt. Game status:  ${gameState.status}`);
+      logger.child({status: gameState.gameStatus}).debug('[gameService] doubt');
+      if(gameState.gameStatus !== 'IDLE' && gameState.gameStatus !== 'WAITING_DOUBT') throw new Error(`Cant doubt. Game status:  ${gameState.gameStatus}`);
       logger.debug('[gameService] doubt: setting status to \'RESOLVING_DOUBT\'');
       await redisController.setStatus(roomId, 'RESOLVING_DOUBT');
 
@@ -207,7 +237,7 @@ const gameService = (
       let winnerId = '';
 
       //Check if last play matches the statement
-      const lastStatementIsTrue = gameState.lastPlay.cards.every(card => card.value === gameState.lastPlay.statement.value);
+      const lastStatementIsTrue = gameState.lastPlay.cards.every(card => card.value === gameState.lastPlay!.statement.value);
 
       //set loserId and nextTurn based on doubt results
       if (lastStatementIsTrue) {
@@ -246,37 +276,24 @@ const gameService = (
       io.to(roomId).emit(SocketEvents.TURN_UPDATE, nextTurnId);
 
 
+      //Check if game ends
+      const newClientStatus: ClientStatus = newWinners.length-1 === newWinners.length ? 'RESULTS' : 'GAME';
+
       const newGameState: GameState = {
         ...gameState,
+        clientStatus: newClientStatus,
         winners: newWinners,
         players: newPlayers,
         turn: nextTurnId,
         playDeck: [],
-        lastPlay: {
-          user: {
-            id: '',
-            name: ''
-          },
-          cards: [],
-          statement: {
-            amount: 0,
-            value: 0
-          }
-        },
-        statementHistory: {
-          amount: 0,
-          value: 0,
-        }
+        lastPlay: null,
+        statementHistory: null,
       };
 
       await redisController.setGameState(roomId, newGameState);
       const gameStateUpdate = helpers.createGameStateUpdateFromGameState(newGameState);
       io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
 
-      //Check if game ends
-      if(newGameState.players.length-1 === newGameState.winners.length){
-        io.to(roomId).emit(SocketEvents.GAME_ENDS);
-      }
 
       callback('OK');
     }catch(e) {
@@ -309,8 +326,8 @@ const gameService = (
 
       const gameState = await redisController.getGameState(roomId);
 
-      logger.child({status: gameState.status}).debug('[gameService] play');
-      if (gameState.status !== 'IDLE') throw new Error('Status not IDLE, can\'t resolve play action');
+      logger.child({status: gameState.gameStatus}).debug('[gameService] play');
+      if (gameState.gameStatus !== 'IDLE') throw new Error('Status not IDLE, can\'t resolve play action');
       logger.debug('[gameService] play: setting status to PLAYING');
       await redisController.setStatus(roomId, 'PLAYING');
 
@@ -345,8 +362,7 @@ const gameService = (
 
 
       //Update statementHistory
-      logger.child({statementValue:parsedStatement.value, statementHistoryvalue: gameState.statementHistory.value}).debug('[gameService] play');
-      if (parsedStatement.value === gameState.statementHistory.value) {
+      if (gameState.statementHistory && parsedStatement.value === gameState.statementHistory.value) {
         logger.debug('[gameService] play: Adding ');
         newStatementHistory = {...gameState.statementHistory, amount: gameState.statementHistory.amount+parsedStatement.amount};
       } else {
@@ -360,19 +376,22 @@ const gameService = (
         newWinners = updateWinners(newWinners, newLastPlay, newPlayers);
       }
 
-      const newGameState: GameState = {
-        winners: newWinners,
-        status: 'PLAYING',
-        isActive: true,
-        turn: gameState.turn,
-        deck: newDeck,
-        players: newPlayers,
-        playDeck: newPlayDeck,
-        lastPlay: newLastPlay,
-        statementHistory: newStatementHistory,
-      };
+      let newGameState= new GameState(
+        newWinners,
+        'PLAYING',
+        'GAME',
+        gameState.turn,
+        newDeck,
+        newPlayDeck,
+        newPlayers,
+        newLastPlay,
+        newStatementHistory,
+      );
 
-
+      //check if game ends
+      if(newGameState.players.length-1 === newGameState.winners.length){
+        newGameState = {...gameState, clientStatus: 'RESULTS'};
+      }
 
       //get game and send to clients
       const gameStateUpdate = helpers.createGameStateUpdateFromGameState(newGameState);
@@ -389,12 +408,9 @@ const gameService = (
       //If played card is not stated to be ace or 10 play goes on normally
 
 
-      await redisController.setGameState(roomId, newGameState);
 
-      //check if game ends
-      if(newGameState.players.length-1 === newGameState.winners.length){
-        io.to(roomId).emit(SocketEvents.GAME_ENDS);
-      }
+
+      await redisController.setGameState(roomId, newGameState);
 
       //Advance turn
       logger.debug('[gameService] play: advancing turn');
@@ -408,7 +424,7 @@ const gameService = (
     }finally {
       //setting status back to IDLE
       try{
-        logger.debug('[gameService] play: Setting status to IDLE');
+        logger.child({room: roomId}).debug('[gameService] play: Setting status to IDLE');
         await redisController.setStatus(roomId, 'IDLE');
       }catch(e){
         logger.error(e);
@@ -436,7 +452,7 @@ const gameService = (
     logger.debug('[gameService] deckAboutToClear');
 
     //Set status to 'WAITING_DOUBT'
-    let newGameState: GameState = {...gameState, status: 'WAITING_DOUBT'};
+    let newGameState: GameState = {...gameState, gameStatus: 'WAITING_DOUBT'};
     await redisController.setGameState(roomId, newGameState);
 
     //Send notification to clients that the deck is about to be cleared
@@ -455,21 +471,9 @@ const gameService = (
     if(status === 'WAITING_DOUBT') {
       logger.debug('[gameService] deckAboutToClear: setting status to CLEARING');
       await redisController.setStatus(roomId, 'CLEARING');
-      const newLastPlay = {
-        cards: [],
-        user: {
-          id: '',
-          name: '',
-        },
-        statement: {
-          value: 0,
-          amount: 0,
-        }
-      };
-      const newStatementHistory = {
-        value: 0,
-        amount: 0
-      };
+
+      const newLastPlay = null;
+      const newStatementHistory = null;
 
       //If player's hand is empty append to winners and advance turn
       let newWinners = newGameState.winners;
@@ -477,29 +481,26 @@ const gameService = (
         newWinners = updateWinners(newWinners, newLastPlay, newGameState.players);
       }
 
-      newGameState={...newGameState, winners: newWinners, lastPlay: newLastPlay, statementHistory: newStatementHistory, playDeck: []};
+      //check if game ends
+      const newClientStatus: ClientStatus = gameState.players.length-1 === newWinners.length ? 'RESULTS' : 'GAME';
+
+      newGameState={...newGameState, clientStatus: newClientStatus, winners: newWinners, lastPlay: newLastPlay, statementHistory: newStatementHistory, playDeck: []};
 
       //get game and send to clients
       await redisController.setGameState(roomId, newGameState);
       const gameStateUpdate = helpers.createGameStateUpdateFromGameState(newGameState);
       io.to(roomId).emit(SocketEvents.GAME_STATE_UPDATE, gameStateUpdate);
 
-      //check if game ends
-      if(newGameState.players.length-1 === newGameState.winners.length){
-        io.to(roomId).emit(SocketEvents.GAME_ENDS);
-        return;
-      }
-
       if(newGameState.winners.some(w=>w.id === newGameState.turn)) await advanceTurn(newGameState.players, newGameState.turn, newGameState.winners, roomId);
     }
   };
 
-  const updateWinners = (winners: Array<User>, lastPlay: Play, players: Array<RedisPlayer>): Array<User> => {
+  const updateWinners = (winners: Array<User>, lastPlay: Play | null, players: Array<RedisPlayer>): Array<User> => {
     const newWinners = winners;
     logger.debug('[gameService] updateWinners');
     //Check if any new user's hand is empty and someone has played after that user
     for(const player of players){
-      if(!winners.includes(player.user) && player.hand.length === 0 && lastPlay.user.id !== player.user.id) {
+      if(!winners.includes(player.user) && player.hand.length === 0 && (!lastPlay || lastPlay.user.id !== player.user.id)) {
         logger.debug(`[gameSevice] appending user ${player.user.id} to winners` );
         winners.push(player.user);
       }
@@ -513,6 +514,7 @@ const gameService = (
   socket.on(SocketEvents.LEAVE_ROOM, leaveRoom);
   socket.on(SocketEvents.PLAY, handlePlay);
   socket.on(SocketEvents.DOUBT, handleDoubt);
+  socket.on(SocketEvents.REQUEST_ROOM_UPDATE, requestRoomUpdate);
 };
 
 export default gameService;

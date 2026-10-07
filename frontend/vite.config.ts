@@ -8,7 +8,7 @@ export default defineConfig({
     allowedHosts: ['app', 'localhost'],
     proxy: {
       '/socket.io': {
-        target: 'http://backend:3000 ',
+        target: 'ws://backend:3000 ',
         changeOrigin: true,
       },
       '/api' : {

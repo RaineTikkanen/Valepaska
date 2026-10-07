@@ -1,9 +1,20 @@
 import {Link, useLocation} from 'react-router';
+import {useAppDispatch, useAppSelector} from '../../hooks/redux.ts';
+import {clearUser, selectUserState, openLogin} from '../../pages/Lobby/userSlice.ts';
+import {leaveRoom} from '../../pages/Lobby/socketSlice.ts';
 
-function Header({ userName, onLogout }: { userName: string, onLogout: () => void }) {
+function Header() {
   const location = useLocation();
+  const user = useAppSelector(selectUserState);
+  const dispatch = useAppDispatch();
+
+  const onLogout = () => {
+    dispatch(clearUser());
+    dispatch(leaveRoom());
+  };
 
   if (location.pathname === '/game') return;
+
   return (
     <header className="flex flex-row items-center justify-between p-6">
       <Link to="/" 
@@ -12,12 +23,12 @@ function Header({ userName, onLogout }: { userName: string, onLogout: () => void
         Valepaska
       </Link>
       <a>
-        {userName ?
+        {user.userId ?
           <div>
-            <p>{userName}</p>
+            <p>{user.userName}</p>
             <button className="hover:cursor-pointer" onClick={onLogout}>Kirjaudu ulos</button>
           </div>:
-          <p>Kirjaudu</p>
+          <p className="hover:cursor-pointer" onClick={()=>dispatch(openLogin())}>Kirjaudu</p>
         }
       </a>
     </header>

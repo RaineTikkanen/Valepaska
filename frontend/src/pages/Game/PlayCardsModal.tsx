@@ -36,7 +36,7 @@ interface PlayCardsModalProps {
   modalOn: boolean, 
   toggleModal: () => void, 
   selectedCards: Array<Card>, 
-  lastPlay: Play,
+  lastPlay: Play | null,
 }
 
 const PlayCardsModal = (props: PlayCardsModalProps) => {
@@ -46,11 +46,11 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
   const labelText = selectedCardsCount > 1 ? `Valitse minä kortteina haluat pelata ${selectedCardsCount} korttia` : 'Valitse minä korttina haluat pelata yhden kortin';
 
   // Disabled conditions:
-  const cantPlayCourt = lastPlay.statement.value !== 0 && lastPlay.statement.value < 7;
-  const cantPlayAce = lastPlay.statement.value !== 0 && lastPlay.statement.value < 11;
-  const cantPlay10 = lastPlay.statement.value !== 0 && lastPlay.statement.value >10;
-  const cantPlayNonCourt = lastPlay.statement.value !== 0 && lastPlay.statement.value >10;
-  const lastPlayIs2 = lastPlay.statement.value === 2;
+  const cantPlayCourt = lastPlay !== null && lastPlay.statement.value !== 0 && lastPlay.statement.value < 7;
+  const cantPlayAce = lastPlay !== null && lastPlay.statement.value !== 0 && lastPlay.statement.value < 11;
+  const cantPlay10 = lastPlay !== null && lastPlay.statement.value !== 0 && lastPlay.statement.value >10;
+  const cantPlayNonCourt = lastPlay !== null && lastPlay.statement.value !== 0 && lastPlay.statement.value >10;
+  const lastPlayIs2 = lastPlay !== null && lastPlay.statement.value === 2;
 
 
   const dispatch = useAppDispatch();
@@ -79,7 +79,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
               key={value}
               value={value}
               disabled={cantPlayNonCourt || lastPlayIs2}
-              lastPlayValue={lastPlay.statement.value}
+              lastPlayValue={lastPlay ? lastPlay.statement.value : null}
               onClick={() => {
                 play(value);
               }}
@@ -92,7 +92,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
               key={value}
               value={value}
               disabled={cantPlayNonCourt || lastPlayIs2}
-              lastPlayValue={lastPlay.statement.value}
+              lastPlayValue={lastPlay ? lastPlay.statement.value : null}
               onClick={() => {
                 play(value);
               }}
@@ -103,7 +103,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             <CardSelectButton
               key={value}
               value={value}
-              lastPlayValue={lastPlay.statement.value}
+              lastPlayValue={lastPlay ? lastPlay.statement.value : null}
               onClick={() => {
                 play(value);
               }}
@@ -116,7 +116,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           <CardSelectButton
             value={10}
             disabled={selectedCardsCount > 1 || cantPlay10 || lastPlayIs2}
-            lastPlayValue={lastPlay.statement.value}
+            lastPlayValue={lastPlay ? lastPlay.statement.value : null}
             onClick={() => {
               play(10);
             }}
@@ -124,7 +124,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           <CardSelectButton
             value={1}
             disabled={selectedCardsCount > 1 || cantPlayAce || lastPlayIs2}
-            lastPlayValue={lastPlay.statement.value}
+            lastPlayValue={lastPlay ? lastPlay.statement.value : null}
             onClick={() => {
               play(1);
             }}
@@ -132,7 +132,7 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
           <CardSelectButton
             value={2}
             disabled={selectedCardsCount > 1}
-            lastPlayValue={lastPlay.statement.value}
+            lastPlayValue={lastPlay ? lastPlay.statement.value : null}
             onClick={() => {
               play(2);
             }}

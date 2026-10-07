@@ -1,15 +1,17 @@
 import {useAppSelector} from '../../hooks/redux.ts';
 import {selectPlayers} from '../Lobby/socketSlice.ts';
-import {selectStatus, selectWinners} from '../Game/gameSlice.ts';
+import {selectStatus, selectWinners} from './gameSlice.ts';
 import {useNavigate} from 'react-router';
 import {useEffect} from 'react';
+
 
 const Results = () => {
   const status = useAppSelector(selectStatus);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (status !== 'FINISHED') void navigate('/lobby');
+    if (status === 'LOBBY') void navigate('/lobby');
+    else if(status ==='GAME') void navigate('/game');
   }, []);
 
   const players = useAppSelector(selectPlayers);
