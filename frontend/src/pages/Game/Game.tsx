@@ -7,10 +7,11 @@ import { useNavigate } from 'react-router';
 import PlayCardsModal from './PlayCardsModal';
 import LastPlayView from './LastPlayView.js';
 import { doubt } from './handSlice.js';
-import logger from '../../utils/logger.ts';
 import { selectSelectedCards } from './handSlice.js';
 import {resetGame, selectGameState} from './gameSlice.ts';
 import type {User} from '../../types/game.type.ts';
+import Modal from '../../components/Modal';
+import Results from './Results.tsx';
 
 
 interface UserElementProps {
@@ -73,50 +74,49 @@ const Game = () => {
   const game = useAppSelector(selectGameState);
   const selectedCards = useAppSelector(selectSelectedCards);
 
-  logger.debug('[Game] game: ', game);
-
-
   const turn = game.turn;
   const userId = localStorage.getItem('userId');
 
-
   const isMyTurn = turn === userId;
 
-  const lastPlayIsAOr10 = game.lastPlay.statement.value === 1 || game.lastPlay.statement.value === 10;
+  const lastPlayIsAOr10 = game.lastPlay && (game.lastPlay.statement.value === 1 || game.lastPlay.statement.value === 10);
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const position = game.winners.findIndex(u => u.id === userId);
 
-  const [modalOn, setModalOn] = useState(false);
-
-  const toggleModal = () => {
-    setModalOn(!modalOn);
-  };
-
+  const [showPlayCardsModal, setShowPlayCardsModal] = useState(false);
+  const [showResultsModal, setShowResultsModal ] = useState(false);
 
   useEffect(() => {
     if (game.status === 'LOBBY') void navigate('/lobby');
-    if (game.status === 'FINISHED') {
-      setTimeout(() => void navigate('/results'), 3000);
+    if (game.status === 'RESULTS') {
+      setShowResultsModal(true);
     }
   }, [game.status]);
 
-
-  const onLeaveGame = () => {
-    if (window.confirm('Haluatko varmasti poistua pelistä?')) {
-      dispatch(leaveRoom());
-      dispatch(resetGame());
-      void navigate('/lobby');
+  const onLeaveGame = () =>{
+    if (window.confirm('Haluatko varmasti poistua pelistä?')){
+      leaveGame();
     }
   };
 
+  const leaveGame = () => {
+    dispatch(leaveRoom());
+    dispatch(resetGame());
+    void navigate('/lobby');
+  };
+
+
   return (
     <div className="flex min-h-dvh flex-col justify-between">
+      <Modal show={showResultsModal} onClose={leaveGame} header={'Tulokset'}>
+        <Results />
+      </Modal>
       <PlayCardsModal
-        modalOn={modalOn}
-        toggleModal={toggleModal}
+        modalOn={showPlayCardsModal}
+        toggleModal={()=>setShowPlayCardsModal(!showPlayCardsModal)}
         selectedCards={selectedCards}
         lastPlay={game.lastPlay}
       />
@@ -144,7 +144,7 @@ const Game = () => {
         <div className="flex flex-row justify-center ">
           <Button
             text="Epäile"
-            disabled={game.lastPlay.user.id === userId || !game.lastPlay.user.id}
+            disabled={!game.lastPlay || game.lastPlay.user.id === userId}
             onClick={() => {
               dispatch(doubt());
             }}
@@ -152,9 +152,7 @@ const Game = () => {
           <Button
             text="Pelaa"
             disabled={selectedCards.length === 0 || !isMyTurn || lastPlayIsAOr10 || game.aboutToClear}
-            onClick={() => {
-              toggleModal();
-            }}
+            onClick={()=>setShowPlayCardsModal(!showPlayCardsModal)}
           />
         </div>
       </div>

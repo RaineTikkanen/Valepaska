@@ -59,8 +59,8 @@ describe('createGameStateUpdateFromGameState', ()=>{
 
   const gameState: GameState = {
     winners: [],
-    status: 'IDLE',
-    isActive: true,
+    gameStatus: 'IDLE',
+    clientStatus: 'GAME',
     turn:  player3.user.id,
     deck: [
       {name:'C9',suit:'C',value:9},
@@ -102,10 +102,10 @@ describe('createGameStateUpdateFromGameState', ()=>{
   it('creates gameStateUpdate correctrly', () => {
     const gameStateUpdate: GameStateUpdate = helpers.createGameStateUpdateFromGameState(gameState);
     assert.equal(gameStateUpdate.winners.length, 0);
-    assert.equal(gameStateUpdate.lastPlay.user.id, 'id_2');
-    assert.equal(gameStateUpdate.lastPlay.user.name, 'user2');
-    assert.equal(gameStateUpdate.lastPlay.statement.amount, 2 );
-    assert.equal(gameStateUpdate.lastPlay.statement.value, 7);
+    assert.equal(gameStateUpdate.lastPlay!.user.id, 'id_2');
+    assert.equal(gameStateUpdate.lastPlay!.user.name, 'user2');
+    assert.equal(gameStateUpdate.lastPlay!.statement.amount, 2 );
+    assert.equal(gameStateUpdate.lastPlay!.statement.value, 7);
     assert.equal(gameStateUpdate.amountOfCardsInPlay, 9);
     assert.equal(gameStateUpdate.sameCardsInPlay, 3);
     assert.equal(gameStateUpdate.players[0].user.id, 'id_1');

@@ -19,9 +19,12 @@ export type GamePlayer = {
   amountOfCards: number;
 };
 
+export type ClientStatus = 'LOBBY' | 'GAME' | 'RESULTS';
+
 export type GameStateUpdate = {
+  clientStatus: ClientStatus;
   winners: Array<User>;
-  lastPlay: Play;
+  lastPlay: Play | null;
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;
   players: Array<GamePlayer>;

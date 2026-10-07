@@ -5,14 +5,14 @@ import type {GamePlayer} from '../../types/game.type.ts';
 
 
 export interface SocketState {
-  isConnected: boolean;
+  status: 'DISCONNECTED' | 'CONNECTING' | 'CONNECTED'
   roomId: string;
   players: Array<GamePlayer>;
 }
 
 const initialState: SocketState = {
-  isConnected: false,
-  roomId: '',
+  status: 'DISCONNECTED',
+  roomId: localStorage.getItem('roomId') || '',
   players: [],
 };
 
@@ -20,33 +20,31 @@ export const socketSlice = createSlice({
   name: 'socket',
   initialState,
   reducers: {
-    connect: () => {
-      return;
+    connect: (state) => {
+      state.status = 'CONNECTING';
     },
     disconnect () {
-      return;
     },
     connected: (state) => {
-      state.isConnected = true;
+      state.status = 'CONNECTED';
     },
-    disconnected: () => {
-      // state.isConnected = false;
-      // state.roomId = '';
-      // state.players = [];
-      return;
+    disconnected: (state) => {
+      state.status = 'DISCONNECTED';
     },
     createRoom: () => {
-      return;
     },
     joinRoom: (_state, _action: PayloadAction<string>) => {
-      return;
     },
-    leaveRoom: (state) => {
+    leaveRoom: () => {
+    },
+    clearRoom: (state) => {
       state.players = [];
       state.roomId = '';
+      localStorage.removeItem('roomId');
     },
     updateRoomId: (state, action: PayloadAction<string>) => {
       state.roomId = action.payload;
+      localStorage.setItem('roomId', action.payload);
     },
     updatePlayers: (state, action: PayloadAction<Array<GamePlayer>>) => {
       state.players = action.payload;
@@ -63,6 +61,7 @@ export const {
   createRoom,
   joinRoom,
   leaveRoom,
+  clearRoom,
   updateRoomId,
   updatePlayers,
 } = socketSlice.actions;

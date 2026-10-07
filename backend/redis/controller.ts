@@ -1,9 +1,10 @@
 import redis from 'redis';
 import { REDIS_URL } from '../utils/config.js';
-import getShuffledDeck from '../deck/deck.js';
-import type {Play, RedisPlayer, GameState, Status} from '../types/controller.type.js';
+import type {Play, RedisPlayer, GameStatus} from '../types/controller.type.js';
+import { GameState } from '../types/controller.type.js';
 import { parseStatus } from '../types/controller.type.js';
 import type {User} from '../types/game.type.js';
+import logger from '../utils/logger.js';
 
 const client = redis.createClient({
   url: REDIS_URL
@@ -19,31 +20,13 @@ await client.connect();
  *
  */
 const createRoom = async (roomId: string ) => {
-  const deck = getShuffledDeck();
+  const initialState = new GameState();
+  logger.child({initialState: initialState}).debug('CREATE ROOM');
   const result = await client.json.set(
     roomId,
     '$',
-    {
-      winners: [],
-      isActive: false,
-      status: 'IDLE',
-      turn: null,
-      deck: deck,
-      playDeck: [],
-      players:[],
-      statementHistory: {
-        value: 0,
-        amount: 0,
-      },
-      lastPlay: {
-        cards: [],
-        user: '',
-        statement: {
-          value: 0,
-          amount: 0,
-        },
-      },
-    });
+    {...initialState}
+  );
 
   if(!result) throw new Error('Error creating room' );
 
@@ -54,12 +37,12 @@ const createRoom = async (roomId: string ) => {
 /**
  * Function to get a status of a game. If status is not found or status is not valid status, throws an error
  * @param {string} roomId Id of a room to get status from
- * @returns {Status} status of a game
+ * @returns {GameStatus} status of a game
  */
-const getStatus = async (roomId: string): Promise<Status> => {
+const getStatus = async (roomId: string): Promise<GameStatus> => {
   const result = await client.json.get(
     roomId,
-    {path: '$.status'}
+    {path: '$.gameStatus'}
   );
 
   if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'string') {
@@ -72,12 +55,12 @@ const getStatus = async (roomId: string): Promise<Status> => {
 /**
  * Set status of a game. Throws an error if setting the status fails
  * @param {string} roomId Id of a room to get status from
- * @param {Status} status to set
+ * @param {GameStatus} status to set
  */
-const setStatus = async (roomId: string, status: Status) => {
+const setStatus = async (roomId: string, status: GameStatus) => {
   const result = await client.json.set(
     roomId,
-    '$.status',
+    '$.gameStatus',
     status,
   );
   if(result!=='OK') throw new Error('Error setting status');
@@ -100,13 +83,13 @@ const removePlayerFromRoom = async (roomId: string, userIndex: number) => {
  * @param {string} roomId Id of room to get status from
  * @returns {Promise<boolean>} isActive state
  */
-const getIsActive = async (roomId: string): Promise<boolean> => {
+const getClientStatus = async (roomId: string): Promise<string> => {
   const result = await client.json.get(
     roomId,
-    {path: '$.isActive'}
+    {path: '$.clientStatus'}
   );
-  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'boolean') {
-    throw new Error('Cant get isActive');
+  if(!Array.isArray(result) || result.length !== 1 || typeof result[0] !== 'string') {
+    throw new Error('Cant get client status');
   }
 
   return result[0];
@@ -117,10 +100,10 @@ const getIsActive = async (roomId: string): Promise<boolean> => {
  * @param {string} roomId Id of game to set status
  * @param {boolean} isActive value to set status to
  */
-const setIsActive = async (roomId: string, isActive: boolean) => {
+const setClientStatus = async (roomId: string, isActive: boolean) => {
   const result = await client.json.set(
     roomId,
-    '$.isActive',
+    '$.clientStatus',
     isActive
   );
 
@@ -190,7 +173,7 @@ const setGameState = async (roomId: string, gameState: GameState) => {
   const result = await client.json.set(
     roomId,
     '$',
-    gameState
+    {...gameState}
   );
   if(result !== 'OK') throw new Error('Cant set game state');
 };
@@ -230,8 +213,8 @@ export default{
   addUserToRoom,
   getPlayersInAGame,
   removePlayerFromRoom,
-  getIsActive,
-  setIsActive,
+  getClientStatus,
+  setClientStatus,
   setTurn,
   setWinners,
   getStatus,

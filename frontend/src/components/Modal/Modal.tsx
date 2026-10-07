@@ -1,13 +1,13 @@
-import type { JSX } from 'react';
+import {type JSX} from 'react';
 
-interface modalProp {
+interface ModalProps {
   show: boolean;
   onClose: ()=>void;
   children?: JSX.Element;
   header: string;
 }
 
-const Modal= (props: modalProp) => {
+const Modal= (props: ModalProps) => {
   const {show, onClose, children, header} = props;
 
   return(

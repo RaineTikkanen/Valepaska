@@ -1,5 +1,6 @@
 import {parseId} from '../utils/utils.js';
 import {CardValues} from './deck.type.js';
+import type {ClientStatus} from './controller.type.js';
 
 export type Play = {
   user: User;
@@ -23,11 +24,12 @@ export type GamePlayer = {
 
 export type GameStateUpdate = {
   winners: Array<User>;
-  lastPlay: Play;
+  lastPlay: Play | null;
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;
   players: Array<GamePlayer>;
   cardsInDeck: number;
+  clientStatus: ClientStatus,
 };
 
 export const parseStatement = (statement: unknown): Statement => {

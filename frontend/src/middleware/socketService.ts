@@ -7,21 +7,20 @@ import { isStatement, isString } from '../utils/typeGuards.js';
 import type {GameStateUpdate, GamePlayer} from '../types/game.type.ts';
 import type {Card} from '../types/deck.type.ts';
 
-import { 
-  connect, 
-  disconnect, 
-  connected, 
-  disconnected, 
-  createRoom, 
-  updateRoomId, 
+import {
+  connect,
+  disconnect,
+  connected,
+  disconnected,
+  createRoom,
+  updateRoomId,
   updatePlayers,
   joinRoom,
   leaveRoom,
+  clearRoom,
 } from '../pages/Lobby/socketSlice.js';
 
 import {
-  gameStarted,
-  gameFinished,
   startGame,
   setTurn,
   updateGameState,
@@ -43,22 +42,35 @@ let storeRef: {dispatch: AppDispatch; getState: () => RootState} | null = null;
 
 
 socket.on(SocketEvents.CONNECT, () => {
-  if (storeRef) storeRef.dispatch(connected());
+  if (storeRef) {
+    storeRef.dispatch(connected());
+    const roomId = localStorage.getItem('roomId');
+    if(roomId) {
+      const userId = localStorage.getItem('userId');
+      const userName = localStorage.getItem('userName');
+      console.log('username and id: ', userName, userId);
+      if(userId && userName) {
+        socket.emit(SocketEvents.REQUEST_ROOM_UPDATE, roomId, {id: userId, name: userName}, (result: string) => {
+          if(storeRef && result === 'Err') storeRef.dispatch(clearRoom());
+        });
+      }else{
+        storeRef.dispatch(clearRoom());
+      }
+    }
+  }
 });
 
 socket.on(SocketEvents.DISCONNECT, () => {
   if (storeRef) storeRef.dispatch(disconnected());
 });
 
+
 socket.on(SocketEvents.ROOM_UPDATE, (roomId: string, players: Array<GamePlayer>) => {
   if (storeRef) {
+    logger.debug('roomUpdate');
     storeRef.dispatch(updateRoomId(roomId));
     storeRef.dispatch(updatePlayers(players));
   }
-});
-
-socket.on(SocketEvents.GAME_STARTS, ()=>{
-  if (storeRef) storeRef.dispatch(gameStarted());
 });
 
 socket.on(SocketEvents.HAND_UPDATE, (cards: Array<Card>)=>{
@@ -101,12 +113,6 @@ socket.on(SocketEvents.DOUBT_RESULT, (cards: Array<Card>)=>{
     setTimeout(()=>{
       store.dispatch(clearDoubtResult());
     },5000);
-  }
-});
-
-socket.on(SocketEvents.GAME_ENDS, ()=> {
-  if(storeRef){
-    storeRef.dispatch(gameFinished());
   }
 });
 
@@ -168,6 +174,7 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
         case leaveRoom.type: {
           socket.emit(SocketEvents.LEAVE_ROOM, (result)=> {
             store.dispatch(resetGame());
+            store.dispatch(clearRoom());
             if (result === 'ERR') {
               window.alert('Failed to leave room');
             }

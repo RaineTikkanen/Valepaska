@@ -6,14 +6,12 @@ import type {Card} from './types/deck.type.ts';
 
 export interface ServerToClientEvents {
   roomUpdate: (roomId: string, players: Array<GamePlayer>) => void;
-  gameStarts:() => void;
   gameStateUpdate: (gameState: GameStateUpdate) => void;
   turnUpdate: (turn: string) => void;
   handUpdate: (cards: Array<Card>) => void;
   doubted: (doubter: string)=> void;
   doubtResult: (cards: Array<Card>) => void;
   aboutToClear: ()=>void;
-  gameEnds:() => void;
 }
 
 export interface ClientToServerEvents {
@@ -23,6 +21,7 @@ export interface ClientToServerEvents {
   startGame: (callback: (result: string) => void) => void;
   doubt: (callback: (result: string) => void,) => void;
   play: (cards: Array<Card>, statement: Statement, callback: (result: string) => void,) => void;
+  requestRoomUpdate: (roomId: string, user: User, callback: (result: string) => void) => void;
 }
 
 export const SocketEvents = {
@@ -32,14 +31,12 @@ export const SocketEvents = {
 
   //ServerToClient
   ROOM_UPDATE: 'roomUpdate',
-  GAME_STARTS: 'gameStarts',
   GAME_STATE_UPDATE: 'gameStateUpdate',
   HAND_UPDATE: 'handUpdate',
   TURN_UPDATE: 'turnUpdate',
   DOUBTED: 'doubted',
   DOUBT_RESULT: 'doubtResult',
   ABOUT_TO_CLEAR: 'aboutToClear',
-  GAME_ENDS: 'gameEnds',
 
   //ClientToServer
   CREATE_ROOM: 'createRoom',
@@ -48,6 +45,7 @@ export const SocketEvents = {
   START_GAME: 'startGame',
   DOUBT: 'doubt',
   PLAY: 'play',
+  REQUEST_ROOM_UPDATE: 'requestRoomUpdate',
 } as const;
 
 

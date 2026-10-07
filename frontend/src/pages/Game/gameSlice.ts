@@ -6,9 +6,9 @@ import type {RootState} from '../../store.ts';
 
 export interface GameState {
   winners: Array<User>;
-  status: 'LOBBY' | 'ACTIVE' | 'FINISHED';
+  status: 'LOBBY' | 'GAME' | 'RESULTS';
   turn: string;
-  lastPlay: Play;
+  lastPlay: Play | null;
   amountOfCardsInPlay: number;
   sameCardsInPlay: number;
   doubter: string;
@@ -21,16 +21,7 @@ const initialState: GameState = {
   winners: [],
   status: 'LOBBY',
   turn: '',
-  lastPlay: {
-    user: {
-      name: '',
-      id: '',
-    },
-    statement:{
-      value: 0,
-      amount: 0,
-    }
-  },
+  lastPlay: null,
   doubter: '',
   amountOfCardsInPlay: 0,
   sameCardsInPlay: 0,
@@ -44,13 +35,12 @@ export const gameSlice = createSlice({
   initialState,
   reducers: {
     startGame: () => {
-      return;
     },
     gameStarted: (state) => {
-      state.status = 'ACTIVE';
+      state.status = 'GAME';
     },
     gameFinished: (state) => {
-      state.status = 'FINISHED';
+      state.status = 'RESULTS';
     },
     resetGame: () => initialState,
     setTurn: (state, action: PayloadAction<string>) => {
@@ -62,6 +52,7 @@ export const gameSlice = createSlice({
       state.sameCardsInPlay = action.payload.sameCardsInPlay;
       state.amountOfCardsInPlay = action.payload.amountOfCardsInPlay;
       state.cardsInDeck = action.payload.cardsInDeck;
+      state.status=action.payload.clientStatus;
     },
     setDoubter: (state, action: PayloadAction<string>) =>{
       state.doubter = action.payload;

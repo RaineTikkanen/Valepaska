@@ -14,3 +14,10 @@ export const isStatement = (value: unknown): value is Statement => {
   return typeof statement.value === 'number' && typeof statement.amount === 'number';
 };
 
+
+export const parseUserId = (result: unknown) => {
+  if (result instanceof Object && 'id' in result && isString(result.id)) {
+    return result.id;
+  } else throw new Error('Invalid userId');
+};
+
