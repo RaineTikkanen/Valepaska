@@ -4,7 +4,6 @@ import type {Play, RedisPlayer, GameStatus} from '../types/controller.type.js';
 import { GameState } from '../types/controller.type.js';
 import { parseStatus } from '../types/controller.type.js';
 import type {User} from '../types/game.type.js';
-import logger from '../utils/logger.js';
 
 const client = redis.createClient({
   url: REDIS_URL
@@ -21,7 +20,6 @@ await client.connect();
  */
 const createRoom = async (roomId: string ) => {
   const initialState = new GameState();
-  logger.child({initialState: initialState}).debug('CREATE ROOM');
   const result = await client.json.set(
     roomId,
     '$',
@@ -166,7 +164,17 @@ const deleteRoom = async (roomId: string) => {
 const getGameState = async (roomId: string): Promise<GameState>=> {
   const result = await client.json.get(roomId) as GameState | null;
   if(!result) throw new Error('Error getting game state');
-  return result;
+  return new GameState(
+    result.winners,
+    result.gameStatus,
+    result.clientStatus,
+    result.turn,
+    result.deck,
+    result.playDeck,
+    result.players,
+    result.lastPlay,
+    result.statementHistory,
+  );
 };
 
 const setGameState = async (roomId: string, gameState: GameState) => {
