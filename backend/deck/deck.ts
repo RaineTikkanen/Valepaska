@@ -1,11 +1,11 @@
-import type { Card } from '../types/deck.type.js';
+import {type Card, CardSuits, CardValues} from '../types/deck.type.js';
 
-const suits = ['C', 'D', 'H', 'S'] as const;
-const values = Array.from({ length: 13 }, (_, index) => index + 1);
+
+
 
 const createDeck = (): Array<Card> =>
-  suits.flatMap((suit) => values.map((value) => ({
-    name: `${suit}${value}` as Card['name'],
+  CardSuits.flatMap((suit) => CardValues.map((value) => ({
+    name: `${suit}${value}`,
     suit,
     value,
   } as Card)));

@@ -29,10 +29,10 @@ import {
   clearDoubter,
   setDoubtResult,
   clearDoubtResult,
-  setAboutToClear,
+  updateClearTimer, stopClearTimer,
 } from '../pages/Game/gameSlice.js';
 
-import {playCards, setCards, doubt, removeCards} from '../pages/Game/handSlice.js';
+import {playCards, setCards, doubt, removeCards} from '../pages/Game/components/handSlice.ts';
 
 import { SocketEvents } from '../socket.ts';
 import logger from '../utils/logger.ts';
@@ -48,7 +48,6 @@ socket.on(SocketEvents.CONNECT, () => {
     if(roomId) {
       const userId = localStorage.getItem('userId');
       const userName = localStorage.getItem('userName');
-      console.log('username and id: ', userName, userId);
       if(userId && userName) {
         socket.emit(SocketEvents.REQUEST_ROOM_UPDATE, roomId, {id: userId, name: userName}, (result: string) => {
           if(storeRef && result === 'Err') storeRef.dispatch(clearRoom());
@@ -84,9 +83,9 @@ socket.on(SocketEvents.GAME_STATE_UPDATE, (gameState: GameStateUpdate)=>{
   }
 });
 
-socket.on(SocketEvents.ABOUT_TO_CLEAR, ()=>{
+socket.on(SocketEvents.ABOUT_TO_CLEAR, (time: number)=>{
   if(storeRef){
-    storeRef.dispatch(setAboutToClear(true));
+    storeRef.dispatch(updateClearTimer(time));
   }
 });
 
@@ -99,7 +98,7 @@ socket.on(SocketEvents.TURN_UPDATE, (turn: string)=>{
 
 socket.on(SocketEvents.DOUBTED, (doubter: string)=>{
   if(storeRef){
-    storeRef.dispatch(setAboutToClear(false));
+    storeRef.dispatch(stopClearTimer());
     storeRef.dispatch(setDoubter(doubter));
   }
 });

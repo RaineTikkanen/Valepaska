@@ -1,10 +1,11 @@
-import cardImages from '../../assets/cardImages';
-import type { Card } from '../../types/deck.type.ts';
-import {useAppDispatch} from '../../hooks/redux';
-import { toggleCardSelectState } from './handSlice';
+import cardImages from '../../../assets/cardImages.ts';
+import type { Card } from '../../../types/deck.type.ts';
+import {useAppDispatch} from '../../../hooks/redux.ts';
+import { toggleCardSelectState } from './handSlice.ts';
 
 interface Props {
   card: Card;
+  zIndex: number;
   selected: boolean;
   disabled: boolean;
 }
@@ -22,14 +23,14 @@ function CardComponent(props: Props) {
 
   return (
     <div
-      key={cardName} 
-      className={`max-w-35 min-w-25 transition-all ${props.disabled ? 'cursor-not-allowed':'hover:cursor-pointer' } ${props.selected ? '-translate-y-6' : ''}`}
+      className={`shrink-0 transition-all ${props.disabled ? 'cursor-not-allowed':'hover:cursor-pointer' } ${props.selected ? '-translate-y-6' : ''}`}
+      style={{ zIndex: props.zIndex }}
       onClick={() => onClick()}
     >
       <img
         src={cardImages[cardName]}
         alt="Card Image"
-        className="shadow-md"
+        className="max-w-30 shadow-md md:max-w-35 xl:max-w-40"
       />
     </div>
   );

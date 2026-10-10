@@ -1,17 +1,17 @@
-import Hand from './Hand';
+import Hand from './components/Hand.tsx';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
 import {leaveRoom, selectPlayers} from '../Lobby/socketSlice.js';
 import { useNavigate } from 'react-router';
-import PlayCardsModal from './PlayCardsModal';
-import LastPlayView from './LastPlayView.js';
-import { doubt } from './handSlice.js';
-import { selectSelectedCards } from './handSlice.js';
+import PlayCardsModal from './components/PlayCardsModal.tsx';
+import LastPlayView from './components/LastPlayView.tsx';
+import {clearSelectedCards, doubt} from './components/handSlice.ts';
+import { selectSelectedCards } from './components/handSlice.ts';
 import {resetGame, selectGameState} from './gameSlice.ts';
 import type {User} from '../../types/game.type.ts';
 import Modal from '../../components/Modal';
-import Results from './Results.tsx';
+import Results from './components/Results.tsx';
 
 
 interface UserElementProps {
@@ -22,13 +22,13 @@ interface UserElementProps {
 }
 
 const UserElement = ({user, isActive, position, amountOfCards}:UserElementProps) => {
+
+
   const positionColor =
     position === 1 ? 'bg-yellow-500' :
       position === 2 ? 'bg-gray-400' :
         position === 3 ? 'bg-orange-700' :
           '';
-
-
 
   return(
     <div className="flex flex-row items-center justify-center">
@@ -37,9 +37,9 @@ const UserElement = ({user, isActive, position, amountOfCards}:UserElementProps)
             <p>{position}</p>
           </div>
       }
-      <div className={`flex min-w-30 flex-col items-center justify-center rounded-4xl px-2 py-6  ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
+      <div className={`flex min-w-30 flex-col items-center justify-center rounded-2xl py-2 ${isActive ? 'bg-emerald-400' : 'bg-emerald-400/50'}`}>
         <p>{user}</p>
-        <p>kortit: {amountOfCards}</p>
+        <p className="text-xs">kortit: {amountOfCards}</p>
       </div>
     </div>
   );
@@ -49,8 +49,8 @@ const UserElement = ({user, isActive, position, amountOfCards}:UserElementProps)
 
 const UserList = ({ turn, winners }: { turn: string, winners: Array<User> }) => {
   const players = useAppSelector(selectPlayers);
-
   const userId = localStorage.getItem('userId');
+
 
   return (
     <div className="flex flex-row justify-center gap-5">
@@ -92,6 +92,7 @@ const Game = () => {
   useEffect(() => {
     if (game.status === 'LOBBY') void navigate('/lobby');
     if (game.status === 'RESULTS') {
+      dispatch(clearSelectedCards());
       setShowResultsModal(true);
     }
   }, [game.status]);
@@ -110,7 +111,7 @@ const Game = () => {
 
 
   return (
-    <div className="flex min-h-dvh flex-col justify-between">
+    <div className="flex min-h-dvh shrink-0 flex-col justify-between">
       <Modal show={showResultsModal} onClose={leaveGame} header={'Tulokset'}>
         <Results />
       </Modal>
@@ -141,19 +142,21 @@ const Game = () => {
             :
             <Hand />}
         </div>
-        <div className="flex flex-row justify-center ">
-          <Button
-            text="Epäile"
-            disabled={!game.lastPlay || game.lastPlay.user.id === userId}
-            onClick={() => {
-              dispatch(doubt());
-            }}
-          />
-          <Button
-            text="Pelaa"
-            disabled={selectedCards.length === 0 || !isMyTurn || lastPlayIsAOr10 || game.aboutToClear}
-            onClick={()=>setShowPlayCardsModal(!showPlayCardsModal)}
-          />
+        <div className="flex flex-1 flex-row justify-center">
+          <div className="flex w-full flex-row justify-center sm:max-w-4/5 md:max-w-1/2 lg:max-w-1/3 xl:max-w-1/4" >
+            <Button
+              text="Epäile"
+              disabled={!game.lastPlay || game.lastPlay.user.id === userId}
+              onClick={() => {
+                dispatch(doubt());
+              }}
+            />
+            <Button
+              text="Pelaa"
+              disabled={selectedCards.length === 0 || !isMyTurn || lastPlayIsAOr10 || game.clearTimer !== -1}
+              onClick={()=>setShowPlayCardsModal(!showPlayCardsModal)}
+            />
+          </div>
         </div>
       </div>
     </div>

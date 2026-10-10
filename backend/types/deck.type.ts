@@ -18,8 +18,6 @@ type CardValue = typeof CardValues[number];
 export { CardValues, CardSuits };
 export type { Card, CardSuit, CardName, CardValue };
 
-
-
 export const parseCardValue = (valueToCheck: unknown): CardValue => {
   const value = CardValues.find((v)=> v===valueToCheck);
   if(!value) throw new Error('Card value parsing failed');

@@ -11,7 +11,6 @@ const Home =()=> {
 
   const navigate = useNavigate();
   const user = useAppSelector(selectUserState);
-  console.log(navigating);
 
   useEffect(() => {
     if(navigating && user.userId){
