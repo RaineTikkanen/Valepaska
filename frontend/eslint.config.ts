@@ -1,8 +1,11 @@
+// @ts-ignore
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
+// @ts-ignore
 import pluginReact from 'eslint-plugin-react';
 import { defineConfig } from 'eslint/config';
 import stylistic from '@stylistic/eslint-plugin';
+// @ts-ignore
 import tailwind from 'eslint-plugin-tailwindcss';
 
 export default defineConfig([

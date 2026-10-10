@@ -108,15 +108,6 @@ export class GameState {
     };
   }
 
-  updatePlayerHand(userId:string, newHand: Array<Card>) {
-    this.players.map(p => {
-      if(p.user.id === userId){
-        p.hand = newHand;
-      }
-      return p;
-    });
-  }
-
   cardsFromHandToPlayDeck(userId: string, cards: Array<Card>) {
     const player = this.players.find(p => p.user.id === userId);
     if (!player) {

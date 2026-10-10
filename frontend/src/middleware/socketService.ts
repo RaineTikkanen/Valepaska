@@ -175,7 +175,7 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
             store.dispatch(resetGame());
             store.dispatch(clearRoom());
             if (result === 'ERR') {
-              window.alert('Failed to leave room');
+              logger.debug('Error while leaving room');
             }
           });
           break;
