@@ -12,7 +12,8 @@ import {selectUserState} from './userSlice.ts';
 
 const Lobby = () => {
   const [copied, setCopied] = useState(false);
-  const inputGameId = useField('text', 'Game ID');
+  const [creating, setCreating] = useState(false);
+  const inputGameId = useField('text', 'Peli ID');
   const navigate = useNavigate();
   const [connected, setConnected] = useState(false);
 
@@ -31,6 +32,12 @@ const Lobby = () => {
   }, [socket.status]);
 
   useEffect(() => {
+    if(socket.roomId){
+      setCreating(false);
+    }
+  }, [socket.roomId]);
+
+  useEffect(() => {
     if (gameStatus==='GAME') {
       void navigate('/game');
     }
@@ -44,6 +51,7 @@ const Lobby = () => {
 
 
   const createGame = () => {
+    setCreating(true);
     dispatch(createRoom());
   };
 
@@ -74,11 +82,14 @@ const Lobby = () => {
 
   return (
     <div className="flex flex-col items-center justify-center p-3 ">
-      <div className="flex flex-col sm:w-[calc(100vw/1.5)] xl:w-[calc(100vw/2)] " >
-        {socket.roomId && (
+      <div className="flex w-full flex-col sm:w-[calc(100vw/1.5)] xl:w-[calc(100vw/2)] " >
+        {socket.roomId ? (
           <div>
             <div className="flex">
-              <h2>Olet pelissä: {socket.roomId}</h2>
+              <div className="flex flex-row">
+                <p>Olet pelissä:</p>
+                <p className="pl-1 capitalize">{socket.roomId}</p>
+              </div>
               <ClipboardDocumentListIcon
                 onClick={() => { void copyToClipBoard(); }}
                 className="mx-2 size-5 hover:cursor-pointer"
@@ -92,16 +103,20 @@ const Lobby = () => {
               </ul>
             </div>
           </div>
-        )}
-        <Button
-          text="Luo peli"
-          onClick={createGame}
-          disabled={socket.roomId !== ''}
-        />
-        <label>Give Game ID</label>
-        <TextInput
-          {...inputGameId}
-        />
+        ) : <div className="h-18" />}
+        <div className={`flex ${creating ? 'animate-pulse' : ''}`}>
+          <Button
+            text={creating ? 'Luodaan...' : 'Luo peli'}
+            onClick={createGame}
+            disabled={socket.roomId !== ''}
+          />
+        </div>
+        <div className="mx-2 flex flex-col ">
+          <label>Anna peli ID</label>
+          <TextInput
+            {...inputGameId}
+          />
+        </div>
         <div className="flex">
           <Button
             text="Poistu pelistä"

@@ -1,6 +1,6 @@
-import {useAppSelector} from '../../hooks/redux.ts';
-import {selectPlayers} from '../Lobby/socketSlice.ts';
-import {selectStatus, selectWinners} from './gameSlice.ts';
+import {useAppSelector} from '../../../hooks/redux.ts';
+import {selectPlayers} from '../../Lobby/socketSlice.ts';
+import {selectStatus, selectWinners} from '../gameSlice.ts';
 import {useNavigate} from 'react-router';
 import {useEffect} from 'react';
 

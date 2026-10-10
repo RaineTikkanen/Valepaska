@@ -1,8 +1,8 @@
 import type { WheelEvent } from 'react';
 import CardComponent from './Card.tsx';
-import {useAppSelector} from '../../hooks/redux';
+import {useAppSelector} from '../../../hooks/redux.ts';
 import {selectHandCards, selectSelectedCards} from './handSlice.ts';
-import logger from '../../utils/logger.ts';
+import logger from '../../../utils/logger.ts';
 
 const Hand = () => {
   const hand = useAppSelector(selectHandCards);
@@ -22,13 +22,14 @@ const Hand = () => {
 
   return (
     <div
-      className="scrollbar-hidden flex max-h-60 min-h-40 flex-row overflow-x-auto overflow-y-hidden p-6 ease-in-out"
+      className="scrollbar-hidden flex flex-row items-center -space-x-16 overflow-x-auto overflow-y-hidden pt-6 md:-space-x-20 xl:-space-x-24"
       onWheel={handleWheel}
     >
-      {hand.map((card) => (
+      {hand.map((card, index) => (
         <CardComponent
           key={card.name}
           card={card}
+          zIndex={index}
           selected={selectedCards.some((selectedCard) => selectedCard.name === card.name)}
           disabled={(selectedCards.length>3 && !selectedCards.includes(card))}
         />

@@ -1,7 +1,7 @@
 import type { Server, Socket } from 'socket.io';
 import { v7 as uuidv7 } from 'uuid';
 import redisController from '../redis/controller.js';
-import {parseId} from '../utils/utils.js';
+import {isString} from '../utils/utils.js';
 import {
   SocketEvents,
   type ClientToServerEvents,
@@ -9,12 +9,64 @@ import {
   type SocketData,
 } from '../socket.js';
 import type {Statement, User, GamePlayer} from '../types/game.type.js';
-import { parseStatement, parseUser, } from '../types/game.type.js';
-import type { GameState } from '../types/controller.type.js';
+import { parseStatement, parseUser} from '../types/game.type.js';
+import type { GameState } from '../types/game.type.js';
 import type { Card } from '../types/deck.type.js';
 import { parseCard } from '../types/deck.type.js';
 import { timeout } from '../utils/utils.js';
 import logger from '../utils/logger.js';
+import {WORD_API} from '../utils/config.js';
+
+
+const parseWordApiResponse = (response: unknown): string => {
+  if (
+    !response ||
+    typeof response !== 'object' ||
+    !Array.isArray(response) ||
+    response.length === 0
+  ) {
+    throw new Error('Not valid word API response');
+  }
+
+  const first: unknown = response[0];
+  if (
+    !first ||
+    typeof first !== 'object' ||
+    !('word' in first) ||
+    typeof first.word !== 'string'
+  ) {
+    throw new Error('Not valid word API response');
+  }
+
+  return first.word;
+};
+
+const fetchWord = async (type: 'noun' | 'adjective'): Promise<string | null> =>{
+  try {
+    const response = await fetch(`${WORD_API}&type=${type}`);
+    if (!response.ok) {
+      throw new Error(`Response status: ${response.status}`);
+    }
+
+    const result: unknown = await response.json();
+    return parseWordApiResponse(result);
+
+
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+};
+
+const getRoomId = async () => {
+  const noun = await fetchWord('noun');
+  const adjective = await fetchWord('adjective');
+  if(noun && adjective) {
+    return `${adjective}-${noun}`;
+  } else{
+    return uuidv7();
+  }
+};
 
 
 const gameService = (
@@ -56,9 +108,10 @@ const gameService = (
     callback: (result: string) => void,
   ) => {
     try {
-      const parsedRoomId = parseId(roomId);
+      if(!isString(roomId)) throw new Error('Room ID is invalid');
+      roomId = roomId.toLowerCase();
       const parsedUser=parseUser(user);
-      await joinRoomInternal(parsedRoomId, parsedUser);
+      await joinRoomInternal(roomId, parsedUser);
       callback('OK');
     } catch (e) {
       console.error('ERROR: ', e);
@@ -70,7 +123,18 @@ const gameService = (
     user: User,
     callback: (result: string) => void,
   ) => {
-    const gameId = uuidv7();
+
+    let gameId = await getRoomId();
+    let roomExists = await redisController.roomExists(gameId);
+    logger.child({gameId: gameId}).debug('[createRoom] gameId created');
+    while (roomExists) {
+      logger.debug('[createRoom] gameId exists. creating new');
+      gameId = await getRoomId();
+      roomExists = await redisController.roomExists(gameId);
+      logger.child({gameId: gameId}).debug('[createRoom] new game id');
+    }
+    logger.child({gameId: gameId}).debug('[crateRoom]');
+
     try {
       const parsedUser = parseUser(user);
       await redisController.createRoom(gameId);
@@ -86,17 +150,16 @@ const gameService = (
 
   const roomUpdate = async (roomId: string) => {
     try{
-      const parsedRoomId = roomId;
-      const players = await redisController.getPlayersInAGame(parsedRoomId);
+      const players = await redisController.getPlayersInAGame(roomId);
 
       if (players.length === 0) {
-        await redisController.deleteRoom(parsedRoomId);
+        await redisController.deleteRoom(roomId);
         return;
       }
 
       const usersToSend: Array<GamePlayer> = players.map(p => ({user: p.user, amountOfCards: 5}));
 
-      io.to(parsedRoomId).emit(SocketEvents.ROOM_UPDATE, parsedRoomId, usersToSend);
+      io.to(roomId).emit(SocketEvents.ROOM_UPDATE, roomId, usersToSend);
     }catch(e){
       console.error('ERROR: ', e);
     }
@@ -106,15 +169,15 @@ const gameService = (
     try{
       const parsedUser = parseUser(user);
       logger.debug(`[gameService] requestRoomUpdate: user: ${parsedUser.id} requesting room update`);
-      const parsedRoomId = parseId(roomId);
-      const gameState = await redisController.getGameState(parsedRoomId);
+      if(!isString(roomId)) throw new Error('Room ID is invalid');
+      const gameState = await redisController.getGameState(roomId);
       socket.data.userId = parsedUser.id;
       socket.data.userName = parsedUser.name;
-      socket.data.roomId = parsedRoomId;
-      await socket.join(parsedRoomId);
+      socket.data.roomId = roomId;
+      await socket.join(roomId);
       await socket.join(parsedUser.id);
       const usersToSend: Array<GamePlayer> = gameState.getGamePlayers();
-      io.to(parsedUser.id).emit(SocketEvents.ROOM_UPDATE, parsedRoomId, usersToSend);
+      io.to(parsedUser.id).emit(SocketEvents.ROOM_UPDATE, roomId, usersToSend);
       io.to(parsedUser.id).emit(SocketEvents.GAME_STATE_UPDATE, gameState.toGameStateUpdate());
       io.to(parsedUser.id).emit(SocketEvents.TURN_UPDATE, gameState.turn);
       io.to(parsedUser.id).emit(SocketEvents.HAND_UPDATE, gameState.getPlayerHand(parsedUser.id));
@@ -174,7 +237,7 @@ const gameService = (
       await socket.leave(userId);
 
       callback('OK');
-      if(clientStatus !== 'RESULTS') {
+      if(clientStatus !== 'RESULTS' && players.length!==1) {
         await roomUpdate(roomId);
       }
     } catch (e) {
@@ -195,8 +258,9 @@ const gameService = (
       const gameState = await redisController.getGameState(roomId);
       if(!gameState.lastPlay) throw new Error('No last play. Can\'t doubt');
       if(gameState.lastPlay.user.id === userId) throw new Error('Can\'t doubt own play');
-      logger.child({status: gameState.gameStatus}).debug('[gameService] doubt');
       if(gameState.gameStatus !== 'IDLE' && gameState.gameStatus !== 'WAITING_DOUBT') throw new Error(`Cant doubt. Game status:  ${gameState.gameStatus}`);
+
+      logger.child({status: gameState.gameStatus}).debug('[gameService] doubt');
       logger.debug('[gameService] doubt: setting status to \'RESOLVING_DOUBT\'');
       await redisController.setStatus(roomId, 'RESOLVING_DOUBT');
 
@@ -306,13 +370,15 @@ const gameService = (
     await redisController.setGameState(roomId, gameState);
 
     //Send notification to clients that the deck is about to be cleared
-    io.to(roomId).emit(SocketEvents.ABOUT_TO_CLEAR);
-
-    //wait for 8 seconds for players to doubt
-    logger.debug('[gameService] deckAboutToClear: starting timeout');
-    await timeout(8000);
-    logger.debug('[gameService] deckAboutToClear: timeout over');
-
+    logger.debug('[gameService] deckAboutToClear before for loop');
+    for(let i=5; i>-1; i-- ) {
+      logger.debug(`TIMER: ${i}`);
+      io.to(roomId).emit(SocketEvents.ABOUT_TO_CLEAR, i);
+      await timeout(1000);
+      const status = await redisController.getStatus(roomId);
+      if(status !== 'WAITING_DOUBT') break;
+    }
+    io.to(roomId).emit(SocketEvents.ABOUT_TO_CLEAR, -1);
     //Check if anyone has doubted while waiting
     const status = await redisController.getStatus(roomId);
     logger.child({status: status}).debug('[gameService] deckAboutToClear');
@@ -323,9 +389,7 @@ const gameService = (
       await redisController.setStatus(roomId, 'CLEARING');
       gameState.gameStatus = 'CLEARING';
 
-      gameState.lastPlay=null;
-      gameState.statementHistory=null;
-      gameState.playDeck=[];
+      gameState.clearPlay();
       gameState.updateWinners();
 
       //get game and send to clients

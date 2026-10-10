@@ -11,7 +11,7 @@ export interface ServerToClientEvents {
   handUpdate: (cards: Array<Card>) => void;
   doubted: (doubter: string)=> void;
   doubtResult: (cards: Array<Card>) => void;
-  aboutToClear: ()=>void;
+  aboutToClear: (time: number)=>void;
 }
 
 export interface ClientToServerEvents {

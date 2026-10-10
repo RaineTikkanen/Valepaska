@@ -1,8 +1,8 @@
 import redis from 'redis';
 import { REDIS_URL } from '../utils/config.js';
-import type {Play, RedisPlayer, GameStatus} from '../types/controller.type.js';
-import { GameState } from '../types/controller.type.js';
-import { parseStatus } from '../types/controller.type.js';
+import type {Play, RedisPlayer, GameStatus} from '../types/game.type.js';
+import { GameState } from '../types/game.type.js';
+import { parseStatus } from '../types/game.type.js';
 import type {User} from '../types/game.type.js';
 
 const client = redis.createClient({
@@ -30,6 +30,11 @@ const createRoom = async (roomId: string ) => {
 
   //Set game to expire in 6 hours
   await client.expire(roomId, 21600);
+};
+
+const roomExists = async (roomId: string) => {
+  const result = await client.exists(roomId);
+  return result!==0;
 };
 
 /**
@@ -227,4 +232,5 @@ export default{
   setWinners,
   getStatus,
   setStatus,
+  roomExists,
 };

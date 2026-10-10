@@ -13,8 +13,8 @@ export interface GameState {
   sameCardsInPlay: number;
   doubter: string;
   doubtResult: Array<Card> | null;
-  aboutToClear: boolean,
-  cardsInDeck: number,
+  clearTimer: number;
+  cardsInDeck: number;
 }
 
 const initialState: GameState = {
@@ -26,7 +26,7 @@ const initialState: GameState = {
   amountOfCardsInPlay: 0,
   sameCardsInPlay: 0,
   doubtResult: null,
-  aboutToClear: false,
+  clearTimer: -1,
   cardsInDeck: 0,
 };
 
@@ -35,12 +35,6 @@ export const gameSlice = createSlice({
   initialState,
   reducers: {
     startGame: () => {
-    },
-    gameStarted: (state) => {
-      state.status = 'GAME';
-    },
-    gameFinished: (state) => {
-      state.status = 'RESULTS';
     },
     resetGame: () => initialState,
     setTurn: (state, action: PayloadAction<string>) => {
@@ -66,16 +60,17 @@ export const gameSlice = createSlice({
     clearDoubtResult: (state) =>{
       state.doubtResult=null;
     },
-    setAboutToClear: (state, action: PayloadAction<boolean>) =>{
-      state.aboutToClear=action.payload; 
+    updateClearTimer: (state, action: PayloadAction<number>) =>{
+      state.clearTimer=action.payload;
+    },
+    stopClearTimer: (state) =>{
+      state.clearTimer=-1;
     }
   }
 });
 
 export const {
   startGame,
-  gameStarted,
-  gameFinished,
   resetGame,
   updateGameState,
   setTurn,
@@ -83,11 +78,14 @@ export const {
   clearDoubter,
   setDoubtResult,
   clearDoubtResult,
-  setAboutToClear,
+  updateClearTimer,
+  stopClearTimer,
 } = gameSlice.actions;
 
 export const selectGameState = (state: RootState) => state.game;
 export const selectStatus = (state: RootState) => state.game.status;
 export const selectWinners = (state: RootState) => state.game.winners;
+export const selectClearTimer = (state: RootState) => state.game.clearTimer;
+
 
 export default gameSlice.reducer;
