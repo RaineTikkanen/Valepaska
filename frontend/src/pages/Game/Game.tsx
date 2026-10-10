@@ -12,6 +12,7 @@ import {resetGame, selectGameState} from './gameSlice.ts';
 import type {User} from '../../types/game.type.ts';
 import Modal from '../../components/Modal';
 import Results from './components/Results.tsx';
+import {selectUserState} from '../Lobby/userSlice.ts';
 
 
 interface UserElementProps {
@@ -48,8 +49,8 @@ const UserElement = ({user, isActive, position, amountOfCards}:UserElementProps)
 
 
 const UserList = ({ turn, winners }: { turn: string, winners: Array<User> }) => {
-  const players = useAppSelector(selectPlayers);
-  const userId = localStorage.getItem('userId');
+  const user = useAppSelector(selectUserState);
+  const players = useAppSelector(selectPlayers).filter(p=>p.user.id!==user.userId);
 
 
   return (
@@ -57,7 +58,7 @@ const UserList = ({ turn, winners }: { turn: string, winners: Array<User> }) => 
       {players.map((player) => (
         <UserElement
           key={player.user.id}
-          user={player.user.id === userId ? 'Sinä' : player.user.name}
+          user={player.user.id === user.userId ? 'Sinä' : player.user.name}
           isActive={turn === player.user.id}
           amountOfCards={player.amountOfCards}
           position={winners.findIndex(u => u.id === player.user.id)+1}
@@ -89,6 +90,8 @@ const Game = () => {
   const [showPlayCardsModal, setShowPlayCardsModal] = useState(false);
   const [showResultsModal, setShowResultsModal ] = useState(false);
 
+
+
   useEffect(() => {
     if (game.status === 'LOBBY') void navigate('/lobby');
     if (game.status === 'RESULTS') {
@@ -107,6 +110,12 @@ const Game = () => {
     dispatch(leaveRoom());
     dispatch(resetGame());
     void navigate('/lobby');
+  };
+
+  const onPlay = () => {
+    if(selectedCards.length !==0) {
+      setShowPlayCardsModal(!showPlayCardsModal);
+    }
   };
 
 
@@ -153,8 +162,8 @@ const Game = () => {
             />
             <Button
               text="Pelaa"
-              disabled={selectedCards.length === 0 || !isMyTurn || lastPlayIsAOr10 || game.clearTimer !== -1}
-              onClick={()=>setShowPlayCardsModal(!showPlayCardsModal)}
+              disabled={!isMyTurn || lastPlayIsAOr10 || game.clearTimer !== -1}
+              onClick={onPlay}
             />
           </div>
         </div>
