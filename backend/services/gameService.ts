@@ -315,7 +315,14 @@ const gameService = (
 
       logger.child({status: gameState.gameStatus}).debug('[gameService] play');
       if (gameState.gameStatus !== 'IDLE') throw new Error('Status not IDLE, can\'t resolve play action');
-      if (gameState.lastPlay && gameState.lastPlay.statement.value > parsedStatement.value) throw new Error('Invalid play');
+      logger.child({lastPlay: gameState.lastPlay?.statement.value}).debug('[gameService] play');
+      logger.child({play: parsedStatement.value}).debug('[gameService] play');
+
+      if (gameState.lastPlay
+        && gameState.lastPlay.statement.value > parsedStatement.value
+        && parsedStatement.value !== 1
+        && parsedStatement.value !== 2
+      ) throw new Error('Invalid play');
       logger.debug('[gameService] play: setting status to PLAYING');
       await redisController.setStatus(roomId, 'PLAYING');
 

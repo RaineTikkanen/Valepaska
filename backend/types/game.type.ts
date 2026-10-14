@@ -251,7 +251,9 @@ export class GameState {
   resolvePlay(userId: string, cards: Array<Card>, statement: Statement){
     this.setLastPlay(userId, cards, statement);
     this.cardsFromHandToPlayDeck(userId, cards);
-    this.dealCardsToUser(userId, cards.length);
+    if(this.getPlayerHand(userId).length < 5) {
+      this.dealCardsToUser(userId, cards.length);
+    }
     this.updateStatementHistory(statement);
     this.updateWinners();
   }
