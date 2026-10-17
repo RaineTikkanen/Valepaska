@@ -127,17 +127,14 @@ export class GameState {
     this.playDeck = this.playDeck.concat(cards);
   }
 
-  dealCardsToUser(userId: string, amount: number) {
-    if (!Number.isInteger(amount) || amount < 0) {
-      throw new RangeError('Card amount must be a non-negative integer');
-    }
+  topUpUserHand(userId: string) {
 
     const player = this.players.find(p => p.user.id === userId);
     if (!player) {
       throw new Error(`Player not found: ${userId}`);
     }
 
-    player.hand = player.hand.concat(this.deck.splice(0, amount));
+    player.hand = player.hand.concat(this.deck.splice(0, Math.max(0, 5-player.hand.length)));
   }
 
   updateStatementHistory(statement: Statement) {
@@ -171,7 +168,7 @@ export class GameState {
 
   startGame(){
     this.players.forEach(p => {
-      this.dealCardsToUser(p.user.id, 5);
+      this.topUpUserHand(p.user.id);
     });
     const starterIndex = getRandomInt(this.players.length);
     this.turn = this.players[starterIndex].user.id;
@@ -245,15 +242,16 @@ export class GameState {
     if(statementIsTrue) {
       this.updateWinners();
     }
+    if(this.winners.includes(this.turn)){
+      this.advanceTurn();
+    }
     return loserId;
   }
 
   resolvePlay(userId: string, cards: Array<Card>, statement: Statement){
     this.setLastPlay(userId, cards, statement);
     this.cardsFromHandToPlayDeck(userId, cards);
-    if(this.getPlayerHand(userId).length < 5) {
-      this.dealCardsToUser(userId, cards.length);
-    }
+    this.topUpUserHand(userId);
     this.updateStatementHistory(statement);
     this.updateWinners();
   }

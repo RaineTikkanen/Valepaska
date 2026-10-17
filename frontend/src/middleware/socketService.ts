@@ -29,10 +29,11 @@ import {
   clearDoubter,
   setDoubtResult,
   clearDoubtResult,
-  updateClearTimer, stopClearTimer,
+  updateClearTimer,
+  stopClearTimer,
 } from '../pages/Game/gameSlice.js';
 
-import {playCards, setCards, doubt, removeCards} from '../pages/Game/components/handSlice.ts';
+import {playCards, setCards, doubt, removeCards, clearCards} from '../pages/Game/components/handSlice.ts';
 
 import { SocketEvents } from '../socket.ts';
 import logger from '../utils/logger.ts';
@@ -174,6 +175,7 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
           socket.emit(SocketEvents.LEAVE_ROOM, (result)=> {
             store.dispatch(resetGame());
             store.dispatch(clearRoom());
+            store.dispatch(clearCards());
             if (result === 'ERR') {
               logger.debug('Error while leaving room');
             }

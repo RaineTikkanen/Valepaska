@@ -40,71 +40,6 @@ describe('parseUser', ()=>{
 });
 
 
-describe('GameState.dealCardsToUser', () => {
-  it('deals cards from the deck into the specified user hand', () => {
-    const cards: Array<Card> = [
-      {name: 'C1', value: 1, suit: 'C'},
-      {name: 'D2', value: 2, suit: 'D'},
-      {name: 'H3', value: 3, suit: 'H'},
-    ];
-    const state = new GameState(
-      [],
-      'IDLE',
-      'LOBBY',
-      '',
-      [...cards],
-      [],
-      [
-        {user: {id: 'user-1', name: 'User One'}, hand: []},
-        {user: {id: 'user-2', name: 'User Two'}, hand: []},
-      ],
-    );
-
-    state.dealCardsToUser('user-2', 2);
-
-    assert.deepEqual(state.players[0].hand, []);
-    assert.deepEqual(state.players[1].hand, cards.slice(0, 2));
-    assert.deepEqual(state.deck, cards.slice(2));
-  });
-
-  it('appends dealt cards to the user existing hand', () => {
-    const existingCard: Card = {name: 'C1', value: 1, suit: 'C'};
-    const dealtCard: Card = {name: 'D2', value: 2, suit: 'D'};
-    const state = new GameState(
-      [],
-      'IDLE',
-      'LOBBY',
-      '',
-      [dealtCard],
-      [],
-      [{user: {id: 'user-1', name: 'User One'}, hand: [existingCard]}],
-    );
-
-    state.dealCardsToUser('user-1', 1);
-
-    assert.deepEqual(state.players[0].hand, [existingCard, dealtCard]);
-    assert.deepEqual(state.deck, []);
-  });
-
-  it('rejects invalid amounts without changing the deck or hand', () => {
-    const card: Card = {name: 'C1', value: 1, suit: 'C'};
-    const state = new GameState(
-      [],
-      'IDLE',
-      'LOBBY',
-      '',
-      [card],
-      [],
-      [{user: {id: 'user-1', name: 'User One'}, hand: []}],
-    );
-
-    assert.throws(() => state.dealCardsToUser('user-1', -1), RangeError);
-    assert.throws(() => state.dealCardsToUser('user-1', 1.5), RangeError);
-    assert.deepEqual(state.deck, [card]);
-    assert.deepEqual(state.players[0].hand, []);
-  });
-});
-
 describe('GameState.cardsFromHandToPlayDeck', () => {
   it('moves the specified cards from the user hand to the play deck', () => {
     const cards: Array<Card> = [
@@ -195,6 +130,85 @@ describe('GameState.toGameStateUpdate', () => {
       cardsInDeck: 0,
       clientStatus: 'GAME',
     });
+  });
+});
+
+describe('GameState.topUpUserHand', () => {
+  it('draws cards from the deck until the hand has five cards', () => {
+    const handCards: Array<Card> = [
+      {name: 'C1', value: 1, suit: 'C'},
+      {name: 'D2', value: 2, suit: 'D'},
+    ];
+    const deckCards: Array<Card> = [
+      {name: 'H3', value: 3, suit: 'H'},
+      {name: 'S4', value: 4, suit: 'S'},
+      {name: 'C5', value: 5, suit: 'C'},
+      {name: 'D6', value: 6, suit: 'D'},
+    ];
+    const expectedHand = [...handCards, ...deckCards.slice(0, 3)];
+    const expectedDeck = [...deckCards.slice(3)];
+    const state = new GameState(
+      [],
+      'PLAYING',
+      'GAME',
+      'user-1',
+      [...deckCards],
+      [],
+      [{user: {id: 'user-1', name: 'User One'}, hand: handCards}],
+    );
+
+    state.topUpUserHand('user-1');
+
+    assert.deepEqual(state.players[0].hand, expectedHand);
+    assert.deepEqual(state.deck, expectedDeck);
+  });
+
+  it('does not draw additional cards if the hand already has five cards', () => {
+    const handCards: Array<Card> = [
+      {name: 'C1', value: 1, suit: 'C'},
+      {name: 'D2', value: 2, suit: 'D'},
+      {name: 'H3', value: 3, suit: 'H'},
+      {name: 'S4', value: 4, suit: 'S'},
+      {name: 'C5', value: 5, suit: 'C'},
+    ];
+    const deckCards: Array<Card> = [
+      {name: 'D6', value: 6, suit: 'D'},
+    ];
+    const expectedDeck = [...deckCards];
+    const state = new GameState(
+      [],
+      'PLAYING',
+      'GAME',
+      'user-1',
+      [...deckCards],
+      [],
+      [{user: {id: 'user-1', name: 'User One'}, hand: handCards}],
+    );
+
+    state.topUpUserHand('user-1');
+
+    assert.deepEqual(state.players[0].hand, handCards);
+    assert.deepEqual(state.deck, expectedDeck);
+  });
+
+  it('throws when the player does not exist and keeps the deck unchanged', () => {
+    const deckCards: Array<Card> = [
+      {name: 'C1', value: 1, suit: 'C'},
+      {name: 'D2', value: 2, suit: 'D'},
+    ];
+    const expectedDeck = [...deckCards];
+    const state = new GameState(
+      [],
+      'PLAYING',
+      'GAME',
+      'user-1',
+      [...deckCards],
+      [],
+      [{user: {id: 'user-2', name: 'User Two'}, hand: []}],
+    );
+
+    assert.throws(() => state.topUpUserHand('missing-user'), /Player not found/);
+    assert.deepEqual(state.deck, expectedDeck);
   });
 });
 
@@ -498,38 +512,7 @@ describe('GameState.resolveDoubt', () => {
 });
 
 describe('GameState.resolvePlay', () => {
-  it('records the play, moves played cards, draws replacements and updates statement history', () => {
-    const player = {id: 'user-1', name: 'User One'};
-    const playedCard: Card = {name: 'C8', value: 8, suit: 'C'};
-    const remainingCard: Card = {name: 'D3', value: 3, suit: 'D'};
-    const replacementCard: Card = {name: 'H5', value: 5, suit: 'H'};
-    const state = new GameState(
-      [],
-      'PLAYING',
-      'GAME',
-      player.id,
-      [replacementCard],
-      [],
-      [{user: player, hand: [playedCard, remainingCard]}],
-      null,
-      {value: 8, amount: 1},
-    );
-    const statement = {value: 8, amount: 2};
-
-    state.resolvePlay(player.id, [playedCard], statement);
-
-    assert.deepEqual(state.lastPlay, {
-      cards: [playedCard],
-      user: player,
-      statement,
-    });
-    assert.deepEqual(state.players[0].hand, [remainingCard, replacementCard]);
-    assert.deepEqual(state.playDeck, [playedCard]);
-    assert.deepEqual(state.deck, []);
-    assert.deepEqual(state.statementHistory, {value: 8, amount: 3});
-  });
-
-  it('does not deal new cards if hand is full', ()=>{
+  it('records the play, moves played cards, draws hand to 5 cards and updates statement history', () => {
     const player = {id: 'user-1', name: 'User One'};
     const playerHand: Array<Card> = [
       {name: 'C8', value: 8, suit: 'C'},
@@ -540,42 +523,42 @@ describe('GameState.resolvePlay', () => {
       {name: 'S12', value: 12, suit: 'S'},
       {name: 'S8', value: 8, suit: 'S'},
     ];
-    const replacementCard: Card = {name: 'H5', value: 5, suit: 'H'};
+    const deck: Array<Card> = [
+      {name: 'H5', value: 5, suit: 'H'},
+      {name: 'D8', value: 8, suit: 'D'},
+      {name: 'H9', value: 9, suit: 'H'},
+      {name: 'D1', value: 1, suit: 'D'},
+      {name: 'H10', value: 10, suit: 'H'},
+      {name: 'D2', value: 2, suit: 'D'},
+      {name: 'S1', value: 1, suit: 'S'},
+      {name: 'S6', value: 6, suit: 'S'},
+    ];
     const state = new GameState(
       [],
       'PLAYING',
       'GAME',
       player.id,
-      [replacementCard],
+      [...deck],
       [],
       [{user: player, hand: playerHand}],
       null,
       {value: 8, amount: 1},
     );
-    const statement = {value: 8, amount: 2};
+    const statement = {value: 8, amount: 4};
 
-    console.log('#############################################');
-    console.log(JSON.stringify(state));
-
-    state.resolvePlay(player.id, playerHand.slice(0,2), statement);
-    console.log(playerHand);
+    state.resolvePlay(player.id, playerHand.slice(0,4), statement);
 
     assert.deepEqual(state.lastPlay, {
-      cards: [
-        {name: 'C8', value: 8, suit: 'C'},
-        {name: 'C9', value: 9, suit: 'C'},
-      ],
+      cards: playerHand.slice(0,4),
       user: player,
       statement,
     });
-    assert.deepEqual(state.players[0].hand, playerHand.slice(2));
-    assert.deepEqual(state.playDeck, [
-      {name: 'C8', value: 8, suit: 'C'},
-      {name: 'C9', value: 9, suit: 'C'},
-    ]);
-    assert.deepEqual(state.deck, [replacementCard]);
-    assert.deepEqual(state.statementHistory, {value: 8, amount: 3});
+    assert.deepEqual(state.players[0].hand, [...playerHand.slice(4), ...deck.slice(0,2), ]);
+    assert.deepEqual(state.playDeck, playerHand.slice(0,4));
+    assert.deepEqual(state.deck, deck.slice(2));
+    assert.deepEqual(state.statementHistory, {value: 8, amount: 5});
   });
+
 
   it('throws for an unknown player', () => {
     const player = {id: 'user-1', name: 'User One'};

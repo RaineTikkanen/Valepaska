@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router';
 import Button from '../../components/Button';
-import {openLogin, selectUserState} from '../Lobby/userSlice.ts';
+import {openLogin, selectUserState} from '../../components/Login/userSlice.ts';
 import {useAppDispatch, useAppSelector} from '../../hooks/redux.ts';
 import {useEffect, useState} from 'react';
 

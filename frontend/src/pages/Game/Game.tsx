@@ -12,7 +12,7 @@ import {resetGame, selectGameState} from './gameSlice.ts';
 import type {User} from '../../types/game.type.ts';
 import Modal from '../../components/Modal';
 import Results from './components/Results.tsx';
-import {selectUserState} from '../Lobby/userSlice.ts';
+import {selectUserState} from '../../components/Login/userSlice.ts';
 
 
 interface UserElementProps {
@@ -113,14 +113,14 @@ const Game = () => {
   };
 
   const onPlay = () => {
-    if(selectedCards.length !==0) {
+    if(selectedCards.length!==0){
       setShowPlayCardsModal(!showPlayCardsModal);
     }
   };
 
 
   return (
-    <div className="flex min-h-dvh shrink-0 flex-col justify-between">
+    <div className="-z-10 flex min-h-dvh shrink-0 flex-col justify-between">
       <Modal show={showResultsModal} onClose={leaveGame} header={'Tulokset'}>
         <Results />
       </Modal>

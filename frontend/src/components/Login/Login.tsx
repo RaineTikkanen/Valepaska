@@ -5,7 +5,7 @@ import useField from '../../hooks/useField.tsx';
 import TextInput from '../TextInput';
 import {useState} from 'react';
 import {useAppDispatch, useAppSelector} from '../../hooks/redux.ts';
-import {selectUserState, closeLogin, updateUserId, updateUserName} from '../../pages/Lobby/userSlice.ts';
+import {selectUserState, closeLogin, updateUserId, updateUserName} from './userSlice.ts';
 import {BACKEND_URL} from '../../utils/config.ts';
 import {parseUserId} from '../../utils/typeGuards.ts';
 
