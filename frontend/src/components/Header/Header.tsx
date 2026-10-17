@@ -1,6 +1,6 @@
 import {Link, useLocation} from 'react-router';
 import {useAppDispatch, useAppSelector} from '../../hooks/redux.ts';
-import {clearUser, selectUserState, openLogin} from '../../pages/Lobby/userSlice.ts';
+import {clearUser, selectUserState, openLogin} from '../Login/userSlice.ts';
 import {leaveRoom} from '../../pages/Lobby/socketSlice.ts';
 
 function Header() {

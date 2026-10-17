@@ -7,7 +7,7 @@ import { connect, createRoom, joinRoom, leaveRoom, selectSocketState } from './s
 import {startGame, selectStatus} from '../Game/gameSlice.js';
 import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
 import TextInput from '../../components/TextInput';
-import {selectUserState} from './userSlice.ts';
+import {selectUserState} from '../../components/Login/userSlice.ts';
 
 
 const Lobby = () => {
@@ -51,6 +51,7 @@ const Lobby = () => {
 
 
   const createGame = () => {
+    if(socket.status === 'DISCONNECTED') dispatch(connect());
     setCreating(true);
     dispatch(createRoom());
   };

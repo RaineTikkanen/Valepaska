@@ -4,7 +4,7 @@ import socketSlice from './pages/Lobby/socketSlice';
 import gameSlice from './pages/Game/gameSlice';
 import loggerMiddleware from './middleware/reduxLogger.ts';
 import socketMiddleware from './middleware/socketService';
-import userSlice from './pages/Lobby/userSlice.ts';
+import userSlice from './components/Login/userSlice.ts';
 
 export const store = configureStore({
   reducer: {
