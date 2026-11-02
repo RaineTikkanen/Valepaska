@@ -11,7 +11,7 @@ interface Props {
 }
 
 function CardComponent(props: Props) {
-  const card = props.card;
+
 
   const dispatch=useAppDispatch();
 
@@ -19,6 +19,7 @@ function CardComponent(props: Props) {
     if(props.disabled) return;
     dispatch(toggleCardSelectState(card));
   };
+  const card = props.card;
   const cardName = card.name;
 
   return (

@@ -17,7 +17,7 @@ const CardSelectButton = (props: ButtonProps) => {
   const defaultClass = baseClass.concat('bg-emerald-400 hover:bg-green-400 hover:cursor-pointer');
   const disabledClassName=baseClass.concat('bg-emerald-400/50 cursor-not-allowed');
 
-  const valueSmallerThanLastPlay = props.lastPlayValue !== null && props.lastPlayValue > props.value && !(props.value in [10, 1, 2]);
+  const valueSmallerThanLastPlay = props.lastPlayValue !== null && props.lastPlayValue > props.value && ![10, 14, 2].includes(props.value);
 
   const disabled = props.disabled || valueSmallerThanLastPlay;
 
@@ -122,11 +122,11 @@ const PlayCardsModal = (props: PlayCardsModalProps) => {
             }}
           />
           <CardSelectButton
-            value={1}
+            value={14}
             disabled={selectedCardsCount > 1 || cantPlayAce || lastPlayIs2}
             lastPlayValue={lastPlay ? lastPlay.statement.value : null}
             onClick={() => {
-              play(1);
+              play(14);
             }}
           />
           <CardSelectButton

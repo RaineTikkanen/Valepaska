@@ -1,4 +1,3 @@
-import N1 from './cardNumbers/N1.svg';
 import N2 from './cardNumbers/N2.svg';
 import N3 from './cardNumbers/N3.svg';
 import N4 from './cardNumbers/N4.svg';
@@ -11,10 +10,10 @@ import N10 from './cardNumbers/N10.svg';
 import N11 from './cardNumbers/N11.svg';
 import N12 from './cardNumbers/N12.svg';
 import N13 from './cardNumbers/N13.svg';
+import N14 from './cardNumbers/N14.svg';
 
 
 const cardNumbers= {
-  N1,
   N2,
   N3,
   N4,
@@ -26,7 +25,8 @@ const cardNumbers= {
   N10,
   N11,
   N12,
-  N13
+  N13,
+  N14,
 };
 
 export default cardNumbers;

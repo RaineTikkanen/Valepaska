@@ -215,7 +215,7 @@ export class GameState {
   }
 
   getGamePlayers():Array<GamePlayer> {
-    return this.players.map(p=>({user:p.user, amountOfCards:5}));
+    return this.players.map(p=>({user:p.user, amountOfCards:p.hand.length}));
   }
 
   /**
@@ -248,7 +248,43 @@ export class GameState {
     return loserId;
   }
 
+  validatePlay(userId: string, cards: Array<Card>, statement: Statement){
+    //Check that it is right user's turn
+    if(this.turn!==userId) throw new Error('Wrong turn');
+    if(cards.length !== statement.amount){
+      throw new Error('Played cards and statement amount mismatch');
+    }
+    const userHand = this.getPlayerHand(userId);
+    const remainingCardNames = new Set(userHand.map(card => card.name));
+
+    for (const card of cards) {
+      if (!remainingCardNames.delete(card.name)) {
+        throw new Error(`Card not found in player hand: ${card.name}`);
+      }
+    }
+    //If there is no last play skip rest of the tests
+    if(!this.lastPlay) return;
+    const lastValue = this.lastPlay.statement.value;
+
+    if (lastValue === 2) {
+      if (statement.value !== 2) {
+        throw new Error('Tried to play non 2 on 2');
+      }
+      return;
+    }
+    if (statement.value !== 2 && statement.value < lastValue) {
+      throw new Error('Play statement value is smaller than last play');
+    }
+    if (lastValue < 7 && statement.value > 10) {
+      throw new Error('Tried to play card over 10 while last statement is under 7');
+    }
+    if (lastValue < 10 && statement.value === 14) {
+      throw new Error('Tried to play ace over card under 10');
+    }
+  }
+
   resolvePlay(userId: string, cards: Array<Card>, statement: Statement){
+    this.validatePlay(userId, cards, statement);
     this.setLastPlay(userId, cards, statement);
     this.cardsFromHandToPlayDeck(userId, cards);
     this.topUpUserHand(userId);
@@ -284,7 +320,7 @@ export const parseStatement = (statement: unknown): Statement => {
     || statement.amount < 1
     || statement.amount > 4
     || !CardValues.some(value => value === statement.value)
-    || (statement.value === 1 && statement.amount !== 1)
+    || (statement.value === 14 && statement.amount !== 1)
     || (statement.value === 2 && statement.amount !== 1)
     || (statement.value === 10 && statement.amount !== 1)
   )

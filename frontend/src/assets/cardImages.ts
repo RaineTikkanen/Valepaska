@@ -46,10 +46,10 @@ import C13 from './cards/C13.svg';
 import D13 from './cards/D13.svg';
 import H13 from './cards/H13.svg';
 import S13 from './cards/S13.svg';
-import C1 from './cards/C1.svg';
-import D1 from './cards/D1.svg';
-import H1 from './cards/H1.svg';
-import S1 from './cards/S1.svg';
+import C14 from './cards/C14.svg';
+import D14 from './cards/D14.svg';
+import H14 from './cards/H14.svg';
+import S14 from './cards/S14.svg';
 
 const cardImages = {
   C2,
@@ -100,10 +100,10 @@ const cardImages = {
   D13,
   H13,
   S13,
-  C1,
-  D1,
-  H1,
-  S1,
+  C14,
+  D14,
+  H14,
+  S14,
 };
 
 export default cardImages;

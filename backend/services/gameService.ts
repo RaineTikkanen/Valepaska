@@ -17,6 +17,7 @@ import { timeout } from '../utils/utils.js';
 import logger from '../utils/logger.js';
 import {WORD_API} from '../utils/config.js';
 
+type callbackStatus = 'OK' | 'ERR';
 
 const parseWordApiResponse = (response: unknown): string => {
   if (
@@ -105,7 +106,7 @@ const gameService = (
   const joinRoom = async (
     roomId: string,
     user: User,
-    callback: (result: string) => void,
+    callback: (result: callbackStatus) => void,
   ) => {
     try {
       if(!isString(roomId)) throw new Error('Room ID is invalid');
@@ -121,7 +122,7 @@ const gameService = (
 
   const createRoom = async (
     user: User,
-    callback: (result: string) => void,
+    callback: (result: callbackStatus) => void,
   ) => {
 
     let gameId = await getRoomId();
@@ -165,7 +166,7 @@ const gameService = (
     }
   };
 
-  const requestRoomUpdate = async (roomId: string, user: User, callback: (result: string) => void) => {
+  const requestRoomUpdate = async (roomId: string, user: User, callback: (result: callbackStatus) => void) => {
     try{
       const parsedUser = parseUser(user);
       logger.debug(`[gameService] requestRoomUpdate: user: ${parsedUser.id} requesting room update`);
@@ -185,12 +186,12 @@ const gameService = (
       callback('OK');
     }catch(e) {
       console.error('Error in requestRoomUpdate:', e);
-      callback('Err');
+      callback('ERR');
     }
   };
 
   const startGame = async (
-    callback: (result: string) => void,
+    callback: (result: callbackStatus) => void,
   ) => {
     try {
       const roomId = socket.data.roomId;
@@ -218,7 +219,7 @@ const gameService = (
   };
 
   const leaveRoom = async (
-    callback: (result: string) => void,
+    callback: (result: callbackStatus) => void,
   ) => {
     try {
       const roomId = socket.data.roomId;
@@ -248,7 +249,7 @@ const gameService = (
 
 
   const handleDoubt = async (
-    callback: (result: string) => void,
+    callback: (result: callbackStatus) => void,
   ) => {
     logger.debug('[gameService] doubt action triggered');
     const roomId = socket.data.roomId;
@@ -284,7 +285,7 @@ const gameService = (
 
       callback('OK');
     }catch(e) {
-      callback('ERROR: ');
+      callback('ERR');
       console.log(e);
       return;
     }finally {
@@ -300,7 +301,7 @@ const gameService = (
   const handlePlay = async (
     cards: Array<Card>,
     statement: Statement,
-    callback: (result: string) => void,
+    callback: (result: callbackStatus) => void,
   ) => {
 
     const userId=socket.data.userId;
@@ -317,18 +318,8 @@ const gameService = (
       if (gameState.gameStatus !== 'IDLE') throw new Error('Status not IDLE, can\'t resolve play action');
       logger.child({lastPlay: gameState.lastPlay?.statement.value}).debug('[gameService] play');
       logger.child({play: parsedStatement.value}).debug('[gameService] play');
-
-      if (gameState.lastPlay
-        && gameState.lastPlay.statement.value > parsedStatement.value
-        && parsedStatement.value !== 1
-        && parsedStatement.value !== 2
-      ) throw new Error('Invalid play');
       logger.debug('[gameService] play: setting status to PLAYING');
       await redisController.setStatus(roomId, 'PLAYING');
-
-      //Check it is right player's turn
-      const turn = gameState.turn;
-      if (turn !== userId) throw new Error('Wrong turn');
 
       gameState.resolvePlay(userId, parsedCards, parsedStatement);
 
@@ -337,13 +328,13 @@ const gameService = (
 
 
       //If played card is stated to be ace or 10, or there are >=4 same cards on play, deck clearing is triggered. If card value is 2, the clearing is not triggered
-      if (parsedStatement.value === 1 || parsedStatement.value === 10 || (gameState.statementHistory && gameState.statementHistory.amount >= 4 && gameState.statementHistory.value !== 2)) {
+      if (parsedStatement.value === 14 || parsedStatement.value === 10 || (gameState.statementHistory && gameState.statementHistory.amount >= 4 && gameState.statementHistory.value !== 2)) {
         callback('OK');
         await handleClearing(roomId, gameState);
         return;
       }
 
-      //If played card is not stated to be ace or 10 play goes on normally
+      //If played card is not stated to be an ace or 10 play goes on normally
       await redisController.setGameState(roomId, gameState);
 
       //Advance turn
