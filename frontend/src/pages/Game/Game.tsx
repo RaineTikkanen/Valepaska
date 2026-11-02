@@ -80,7 +80,7 @@ const Game = () => {
 
   const isMyTurn = turn === userId;
 
-  const lastPlayIsAOr10 = game.lastPlay && (game.lastPlay.statement.value === 1 || game.lastPlay.statement.value === 10);
+  const lastPlayIsAOr10 = game.lastPlay && (game.lastPlay.statement.value === 14 || game.lastPlay.statement.value === 10);
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();

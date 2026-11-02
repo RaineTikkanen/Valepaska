@@ -1,6 +1,6 @@
 import {describe, it} from 'node:test';
 import assert from 'node:assert/strict';
-import {parseStatement, parseUser} from './game.type.js';
+import {parseStatement, parseUser, type Play} from './game.type.js';
 import {GameState} from './game.type.js';
 import type {Card} from './deck.type.js';
 
@@ -10,17 +10,17 @@ describe('parseStatement', () => {
   it('accepts valid statement', () => {
     assert.doesNotThrow(()=>parseStatement({value: 2, amount: 1}));
     assert.doesNotThrow(()=>parseStatement({value: 10, amount: 1}));
-    assert.doesNotThrow(()=>parseStatement({value: 1, amount: 1}));
+    assert.doesNotThrow(()=>parseStatement({value: 14, amount: 1}));
     assert.doesNotThrow(()=>parseStatement({value: 4, amount: 2}));
     assert.doesNotThrow(()=>parseStatement({value: 13, amount: 4}));
   });
   it('does not accept invalid statement', () => {
     assert.throws(()=>parseStatement({value: 10, amount: 2}));
-    assert.throws(()=>parseStatement({value: 1, amount: 2}));
+    assert.throws(()=>parseStatement({value: 14, amount: 2}));
+    assert.throws(()=>parseStatement({value: 1, amount: 1}));
     assert.throws(()=>parseStatement({value: 2, amount: 2}));
     assert.throws(()=>parseStatement({value: 1, amount: 5}));
     assert.throws(()=>parseStatement({value: 3, amount: 0}));
-    assert.throws(()=>parseStatement({value: 14, amount: 1}));
   });
 });
 
@@ -43,7 +43,7 @@ describe('parseUser', ()=>{
 describe('GameState.cardsFromHandToPlayDeck', () => {
   it('moves the specified cards from the user hand to the play deck', () => {
     const cards: Array<Card> = [
-      {name: 'C1', value: 1, suit: 'C'},
+      {name: 'C14', value: 14, suit: 'C'},
       {name: 'D2', value: 2, suit: 'D'},
       {name: 'H3', value: 3, suit: 'H'},
     ];
@@ -65,7 +65,7 @@ describe('GameState.cardsFromHandToPlayDeck', () => {
   });
 
   it('leaves the hand and play deck unchanged if a card is not in the hand', () => {
-    const handCard: Card = {name: 'C1', value: 1, suit: 'C'};
+    const handCard: Card = {name: 'C14', value: 14, suit: 'C'};
     const missingCard: Card = {name: 'D2', value: 2, suit: 'D'};
     const state = new GameState(
       [],
@@ -91,7 +91,7 @@ describe('GameState.toGameStateUpdate', () => {
     const userOne = {id: 'user-1', name: 'User One'};
     const userTwo = {id: 'user-2', name: 'User Two'};
     const userThree = {id: 'user-3', name: 'User Three'};
-    const handCard: Card = {name: 'C1', value: 1, suit: 'C'};
+    const handCard: Card = {name: 'C14', value: 14, suit: 'C'};
     const playCard: Card = {name: 'D2', value: 2, suit: 'D'};
 
     const state = new GameState(
@@ -136,7 +136,7 @@ describe('GameState.toGameStateUpdate', () => {
 describe('GameState.topUpUserHand', () => {
   it('draws cards from the deck until the hand has five cards', () => {
     const handCards: Array<Card> = [
-      {name: 'C1', value: 1, suit: 'C'},
+      {name: 'C14', value: 14, suit: 'C'},
       {name: 'D2', value: 2, suit: 'D'},
     ];
     const deckCards: Array<Card> = [
@@ -165,7 +165,7 @@ describe('GameState.topUpUserHand', () => {
 
   it('does not draw additional cards if the hand already has five cards', () => {
     const handCards: Array<Card> = [
-      {name: 'C1', value: 1, suit: 'C'},
+      {name: 'C14', value: 14, suit: 'C'},
       {name: 'D2', value: 2, suit: 'D'},
       {name: 'H3', value: 3, suit: 'H'},
       {name: 'S4', value: 4, suit: 'S'},
@@ -193,7 +193,7 @@ describe('GameState.topUpUserHand', () => {
 
   it('throws when the player does not exist and keeps the deck unchanged', () => {
     const deckCards: Array<Card> = [
-      {name: 'C1', value: 1, suit: 'C'},
+      {name: 'C14', value: 14, suit: 'C'},
       {name: 'D2', value: 2, suit: 'D'},
     ];
     const expectedDeck = [...deckCards];
@@ -262,7 +262,7 @@ describe('GameState.startGame', () => {
       {user:{id: 'user-3', name: 'User Three'}, hand: []},
     ];
     const cards: Array<Card> = [
-      { name: 'C1', suit: 'C', value: 1 },
+      { name: 'C14', suit: 'C', value: 14 },
       { name: 'C2', suit: 'C', value: 2 },
       { name: 'C3', suit: 'C', value: 3 },
       { name: 'D6', suit: 'D', value: 6 },
@@ -282,7 +282,7 @@ describe('GameState.startGame', () => {
       { name: 'S5', suit: 'S', value: 5 },
       { name: 'D12', suit: 'D', value: 12 },
       { name: 'D13', suit: 'D', value: 13 },
-      { name: 'H1', suit: 'H', value: 1 },
+      { name: 'H14', suit: 'H', value: 14 },
       { name: 'H2', suit: 'H', value: 2 },
       { name: 'H3', suit: 'H', value: 3 },
     ];
@@ -312,7 +312,7 @@ describe('GameState.startGame', () => {
 
 describe('GameState.dealPlayDeckToPlayer', () => {
   it('adds the play deck cards to the selected player hand and clears the play deck', () => {
-    const handCard: Card = {name: 'C1', value: 1, suit: 'C'};
+    const handCard: Card = {name: 'C14', value: 14, suit: 'C'};
     const playCards: Array<Card> = [
       {name: 'D2', value: 2, suit: 'D'},
       {name: 'H3', value: 3, suit: 'H'},
@@ -356,7 +356,7 @@ describe('GameState.updateWinners', () => {
       'PLAYING',
       'GAME',
       '',
-      [{name: 'C1', value: 1, suit: 'C'}],
+      [{name: 'C14', value: 14, suit: 'C'}],
       [],
       [{user: player, hand: []}],
     );
@@ -518,7 +518,7 @@ describe('GameState.resolvePlay', () => {
       {name: 'C8', value: 8, suit: 'C'},
       {name: 'C9', value: 9, suit: 'C'},
       {name: 'D10', value: 10, suit: 'D'},
-      {name: 'H1', value: 1, suit: 'H'},
+      {name: 'H14', value: 14, suit: 'H'},
       {name: 'H2', value: 2, suit: 'H'},
       {name: 'S12', value: 12, suit: 'S'},
       {name: 'S8', value: 8, suit: 'S'},
@@ -527,10 +527,10 @@ describe('GameState.resolvePlay', () => {
       {name: 'H5', value: 5, suit: 'H'},
       {name: 'D8', value: 8, suit: 'D'},
       {name: 'H9', value: 9, suit: 'H'},
-      {name: 'D1', value: 1, suit: 'D'},
+      {name: 'D14', value: 14, suit: 'D'},
       {name: 'H10', value: 10, suit: 'H'},
       {name: 'D2', value: 2, suit: 'D'},
-      {name: 'S1', value: 1, suit: 'S'},
+      {name: 'S14', value: 14, suit: 'S'},
       {name: 'S6', value: 6, suit: 'S'},
     ];
     const state = new GameState(
@@ -561,16 +561,16 @@ describe('GameState.resolvePlay', () => {
 
 
   it('throws for an unknown player', () => {
-    const player = {id: 'user-1', name: 'User One'};
+    const user = {id: 'user-1', name: 'User One'};
     const card: Card = {name: 'C8', value: 8, suit: 'C'};
     const state = new GameState(
       [],
       'PLAYING',
       'GAME',
-      player.id,
+      'missing-user',
       [],
       [],
-      [{user: player, hand: [card]}],
+      [{user: user, hand: [card]}],
     );
 
     assert.throws(
@@ -580,5 +580,212 @@ describe('GameState.resolvePlay', () => {
     assert.equal(state.lastPlay, null);
     assert.deepEqual(state.players[0].hand, [card]);
     assert.deepEqual(state.playDeck, []);
+  });
+
+
+  describe('GameState.validatePlay', () => {
+    const hand: Array<Card> = [
+      {name: 'H5', value: 5, suit: 'H'},
+      {name: 'D8', value: 8, suit: 'D'},
+      {name: 'H9', value: 9, suit: 'H'},
+      {name: 'D14', value: 14, suit: 'D'},
+      {name: 'H10', value: 10, suit: 'H'},
+      {name: 'D2', value: 2, suit: 'D'},
+      {name: 'S14', value: 14, suit: 'S'},
+      {name: 'S6', value: 6, suit: 'S'},
+    ];
+    const user = {id: 'user-1', name: 'User One'};
+    const createState = (lastPlay: Play | null = null, turn = user.id) => new GameState(
+      [],
+      'PLAYING',
+      'GAME',
+      turn,
+      [],
+      [],
+      [{user, hand}],
+      lastPlay,
+    );
+
+    it('rejects a play when it is not the player\'s turn', () => {
+      const state = createState();
+
+      assert.throws(
+        () => state.validatePlay('user-2', [hand[0]], {value: 5, amount: 1}),
+        /Wrong turn/,
+      );
+    });
+
+    it('rejects a mismatch between played cards and statement amount', () => {
+      const state = createState();
+
+      assert.throws(
+        () => state.validatePlay(user.id, [hand[0], hand[1]], {value: 5, amount: 1}),
+        /Played cards and statement amount mismatch/,
+      );
+    });
+
+    it('rejects playing the same card more times than it is in the hand', () => {
+      const state = createState();
+
+      assert.throws(
+        () => state.validatePlay(user.id, [hand[0], hand[0]], {value: 5, amount: 2}),
+        /Card not found in player hand/,
+      );
+    });
+
+    it('allows any valid statement when there is no previous play', () => {
+      const state = createState();
+
+      assert.doesNotThrow(
+        () => state.validatePlay(user.id, [hand[3]], {value: 14, amount: 1}),
+      );
+    });
+
+    it('allows playing a 2 over a higher previous statement', () => {
+      const lastPlay: Play = {
+        statement: {value: 9, amount: 1},
+        user: {id: 'user-2', name: 'User Two'},
+        cards: [{name: 'H9', value: 9, suit: 'H'}],
+      };
+      const state = createState(lastPlay);
+
+      assert.doesNotThrow(
+        () => state.validatePlay(user.id, [hand[5]], {value: 2, amount: 1}),
+      );
+    });
+
+    it('Statement value below lastPlay statement value throws error', () => {
+
+      const lastPlay: Play = {
+        statement: {value: 4, amount: 2},
+        user: {id: 'user-2', name: 'User Two'},
+        cards: [
+          {name: 'H6', value: 6, suit: 'H'},
+          {name: 'S8', value: 8, suit: 'S'},
+        ]
+      };
+      const state = new GameState(
+        [],
+        'PLAYING',
+        'GAME',
+        user.id,
+        [],
+        [],
+        [{user: user, hand: hand}],
+        lastPlay,
+      );
+      assert.throws(() => state.validatePlay(user.id, hand.slice(0, 2), {value: 3, amount: 2}));
+    });
+
+    it('Statement value equal or over lastPlay statement value is accepted', () => {
+
+      const lastPlay: Play = {
+        statement: {value: 3, amount: 2},
+        user: {id: 'user-2', name: 'User Two'},
+        cards: [
+          {name: 'H6', value: 6, suit: 'H'},
+          {name: 'S8', value: 8, suit: 'S'},
+        ]
+      };
+      const state = new GameState(
+        [],
+        'PLAYING',
+        'GAME',
+        user.id,
+        [],
+        [],
+        [{user: user, hand: hand}],
+        lastPlay,
+      );
+
+      assert.doesNotThrow(() => state.validatePlay(user.id, hand.slice(0, 2), {value: 3, amount: 2}));
+      assert.doesNotThrow(() => state.validatePlay(user.id, hand.slice(0, 2), {value: 4, amount: 2}));
+    });
+
+    it('If lastPlay.statement.value is 2 only 2 is accepted as a valid play', () => {
+      const lastPlay: Play = {
+        statement: {value: 2, amount: 1},
+        user: {id: 'user-2', name: 'User Two'},
+        cards: [
+          {name: 'H6', value: 6, suit: 'H'},
+        ]
+      };
+      const state = new GameState(
+        [],
+        'PLAYING',
+        'GAME',
+        user.id,
+        [],
+        [],
+        [{user: user, hand: hand}],
+        lastPlay,
+      );
+
+      assert.doesNotThrow(() => state.validatePlay(user.id, [hand[0]], {value: 2, amount: 1}));
+      assert.throws(() => state.validatePlay(user.id, [hand[0]], {value: 4, amount: 1}));
+    });
+
+    it('rejects statements over 10 when the previous statement is below 7', () => {
+      const lastPlay: Play = {
+        statement: {value: 6, amount: 1},
+        user: {id: 'user-2', name: 'User Two'},
+        cards: [{name: 'H6', value: 6, suit: 'H'}],
+      };
+      const state = createState(lastPlay);
+
+      assert.throws(
+        () => state.validatePlay(user.id, [hand[3]], {value: 11, amount: 1}),
+        /Tried to play card over 10/,
+      );
+    });
+
+    it('rejects an ace over a previous statement below 10, but allows it at 10', () => {
+      const lastPlay: Play = {
+        statement: {value: 9, amount: 1},
+        user: {id: 'user-2', name: 'User Two'},
+        cards: [{name: 'H9', value: 9, suit: 'H'}],
+      };
+      const state = createState(lastPlay);
+
+      assert.throws(
+        () => state.validatePlay(user.id, [hand[3]], {value: 14, amount: 1}),
+        /Tried to play ace over card under 10/,
+      );
+
+      state.lastPlay = {...lastPlay, statement: {value: 10, amount: 1}};
+      assert.doesNotThrow(
+        () => state.validatePlay(user.id, [hand[3]], {value: 14, amount: 1}),
+      );
+    });
+
+    it('Checks correctly if played cards are in user hand', () => {
+      const lastPlay: Play = {
+        statement: {value: 3, amount: 1},
+        user: {id: 'user-2', name: 'User Two'},
+        cards: [
+          {name: 'H6', value: 6, suit: 'H'},
+        ]
+      };
+      const state = new GameState(
+        [],
+        'PLAYING',
+        'GAME',
+        user.id,
+        [],
+        [],
+        [{user: user, hand: hand}],
+        lastPlay,
+      );
+
+      const cards: Array<Card> = [
+        { name: 'S10', suit: 'S', value: 10 },
+        { name: 'S11', suit: 'S', value: 11 },
+        { name: 'S12', suit: 'S', value: 12 },
+      ];
+
+      assert.doesNotThrow(() => state.validatePlay(user.id, hand.slice(0,3), {value: 4, amount: 3}));
+      assert.throws(() => state.validatePlay(user.id, cards, {value: 4, amount: 1}));
+    });
+
   });
 });

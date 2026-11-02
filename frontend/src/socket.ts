@@ -3,6 +3,8 @@ import { BACKEND_URL } from './utils/config.ts';
 import type {GamePlayer, GameStateUpdate, Statement, User} from './types/game.type.ts';
 import type {Card} from './types/deck.type.ts';
 
+export type callbackStatus = 'OK' | 'ERR';
+
 
 export interface ServerToClientEvents {
   roomUpdate: (roomId: string, players: Array<GamePlayer>) => void;
@@ -15,13 +17,13 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  createRoom: (user: User, callback:(result: string) => void) => void;
-  joinRoom: (roomId: string, user: User, callback: (result: string) => void) => void;
-  leaveRoom: (callback:(result: string) => void) => void;
-  startGame: (callback: (result: string) => void) => void;
-  doubt: (callback: (result: string) => void,) => void;
-  play: (cards: Array<Card>, statement: Statement, callback: (result: string) => void,) => void;
-  requestRoomUpdate: (roomId: string, user: User, callback: (result: string) => void) => void;
+  createRoom: (user: User, callback:(result: callbackStatus) => void) => void;
+  joinRoom: (roomId: string, user: User, callback: (result: callbackStatus) => void) => void;
+  leaveRoom: (callback:(result: callbackStatus) => void) => void;
+  startGame: (callback: (result: callbackStatus) => void) => void;
+  doubt: (callback: (result: callbackStatus) => void,) => void;
+  play: (cards: Array<Card>, statement: Statement, callback: (result: callbackStatus) => void,) => void;
+  requestRoomUpdate: (roomId: string, user: User, callback: (result: callbackStatus) => void) => void;
 }
 
 export const SocketEvents = {

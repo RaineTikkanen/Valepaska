@@ -37,7 +37,7 @@ import {playCards, setCards, doubt, removeCards, clearCards} from '../pages/Game
 
 import { SocketEvents } from '../socket.ts';
 import logger from '../utils/logger.ts';
-
+import type {callbackStatus} from '../socket.ts';
 
 let storeRef: {dispatch: AppDispatch; getState: () => RootState} | null = null;
 
@@ -50,8 +50,8 @@ socket.on(SocketEvents.CONNECT, () => {
       const userId = localStorage.getItem('userId');
       const userName = localStorage.getItem('userName');
       if(userId && userName) {
-        socket.emit(SocketEvents.REQUEST_ROOM_UPDATE, roomId, {id: userId, name: userName}, (result: string) => {
-          if(storeRef && result === 'Err') storeRef.dispatch(clearRoom());
+        socket.emit(SocketEvents.REQUEST_ROOM_UPDATE, roomId, {id: userId, name: userName}, (result: callbackStatus) => {
+          if(storeRef && result === 'ERR') storeRef.dispatch(clearRoom());
         });
       }else{
         storeRef.dispatch(clearRoom());
@@ -145,8 +145,8 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
           const userId = localStorage.getItem('userId');
           const userName = localStorage.getItem('userName');
           if(userId && userName){
-            socket.emit(SocketEvents.CREATE_ROOM, {id: userId, name: userName}, (result) =>{
-              if (result == 'ERR') {
+            socket.emit(SocketEvents.CREATE_ROOM, {id: userId, name: userName}, (result: callbackStatus) =>{
+              if (result === 'ERR') {
                 window.alert('Failed to create room');
               }
             });
@@ -162,8 +162,8 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
             break;
           }
           if (userId && userName){
-            socket.emit(SocketEvents.JOIN_ROOM, payload, {id: userId, name: userName}, (result) => {
-              if (result == 'ERR') {
+            socket.emit(SocketEvents.JOIN_ROOM, payload, {id: userId, name: userName}, (result: callbackStatus) => {
+              if (result === 'ERR') {
                 window.alert('Failed to join room. Please check the game ID and try again.');
               }
             });
@@ -172,7 +172,7 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
         }
 
         case leaveRoom.type: {
-          socket.emit(SocketEvents.LEAVE_ROOM, (result)=> {
+          socket.emit(SocketEvents.LEAVE_ROOM, (result: callbackStatus)=> {
             store.dispatch(resetGame());
             store.dispatch(clearRoom());
             store.dispatch(clearCards());
@@ -184,7 +184,7 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
         }
         
         case startGame.type: {
-          socket.emit(SocketEvents.START_GAME, (result)=> {
+          socket.emit(SocketEvents.START_GAME, (result: callbackStatus)=> {
             if (result === 'ERR') {
               window.alert('Failed to start game');
             }
@@ -200,8 +200,8 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
           const statement = payload;
           const cards = store.getState().hand.selectedCards;
 
-          socket.emit(SocketEvents.PLAY, cards, statement, (result)=> {
-            if (result == 'OK') {
+          socket.emit(SocketEvents.PLAY, cards, statement, (result:callbackStatus)=> {
+            if (result === 'OK') {
               store.dispatch(removeCards(cards));
             } else window.alert('Failed to play cards');
 
@@ -210,7 +210,7 @@ const socketService: Middleware = (store: {dispatch: AppDispatch; getState: () =
         }
 
         case doubt.type: {
-          socket.emit(SocketEvents.DOUBT, (result)=> {
+          socket.emit(SocketEvents.DOUBT, (result: callbackStatus)=> {
             if (result === 'ERR') {
               logger.error('Failed to doubt');
             }

@@ -14,7 +14,7 @@ describe('Card value parser', () => {
   });
   it('should not accept values not in CardValues', () => {
     assert.throws(() => parseCardValue(0));
-    assert.throws(() => parseCardValue(14));
+    assert.throws(() => parseCardValue(1));
     assert.throws(() => parseCardValue('2'));
   });
 });
@@ -43,8 +43,9 @@ describe('Card name parser', () => {
   });
   it('should not accept values not in CardNames', () => {
     assert.throws(() => parseCardName(1));
-    assert.throws(() => parseCardName('A'));
+    assert.throws(() => parseCardName('C'));
     assert.throws(() => parseCardName('C123'));
+    assert.throws(() => parseCardName('C1'));
     assert.throws(() => parseCardName('A12'));
     assert.throws(() => parseCardName('JOAMS'));
   });
@@ -58,11 +59,11 @@ describe('Card parser', () => {
     });
   });
   it('should not accept invalid cards', () => {
-    const invalidValue= {name: 'C1', value: 14, suit: 'C'};
-    const invalidName = {name: 'A1', suit: 'C', value: 1};
-    const invalidSuit = {name: 'C1', suit: 'G', value: 1};
-    const conflictingSuit = {name: 'C1', suit: 'H', value: 1};
-    const conflictingValue = {name: 'C1', suit: 'C', value: 2};
+    const invalidValue= {name: 'C14', value: 1, suit: 'C'};
+    const invalidName = {name: 'A14', suit: 'C', value: 14};
+    const invalidSuit = {name: 'C14', suit: 'G', value: 14};
+    const conflictingSuit = {name: 'C14', suit: 'H', value: 14};
+    const conflictingValue = {name: 'C14', suit: 'C', value: 2};
 
     assert.throws(() => parseCard(invalidValue));
     assert.throws(() => parseCard(invalidName));

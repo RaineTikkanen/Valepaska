@@ -27,7 +27,6 @@ services:
       - ./frontend:/usr/src/app
     environment:
       - VITE_NODE_ENV=development
-      - VITE_BACKEND_URL=http://localhost:5173
     container_name: valepaska-front-dev
     ports:
       - 5173:5173
